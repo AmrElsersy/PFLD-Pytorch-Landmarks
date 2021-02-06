@@ -1,10 +1,10 @@
 import os, time, enum
 from PIL import Image
+import argparse
 import torch
 from torch.utils.data import Dataset, DataLoader
 import numpy as np 
 import cv2
-
 
 class LoadMode(enum.Enum):
     FACE_ONLY = 0
@@ -34,6 +34,15 @@ class WFLW_Dataset(Dataset):
 
         labels = self.read_annotations(index)
         image = self.read_image(labels['image_name'])
+
+        # clip the image rect and translate the landmarks coordinates
+        if self.load_mode == LoadMode.FACE_ONLY:
+            rect = labels['rect']
+            landmarks = labels['landmarks']
+            (x1, y1), (x2, y2) = rect            
+            image = image[int(x1):int(x2), int(y1):int(y2)]
+            landmarks -= rect[0]
+
         return image, labels
 
     def read_annotations(self, index):
@@ -60,12 +69,6 @@ class WFLW_Dataset(Dataset):
         rect = np.array(rect, dtype=np.float).reshape((2,2))
         attributes = np.array(attributes, dtype=np.int).reshape((6,))
 
-        # clip the image rect and translate the landmarks coordinates
-        if self.load_mode == LoadMode.FACE_ONLY:
-            (x1, y1), (x2, y2) = rect            
-            image = image[int(x1):int(x2), int(y1):int(y2) ]
-            landmarks -= rect[0]
-
         labels = {
             "landmarks": landmarks,
             "rect": rect,
@@ -90,15 +93,17 @@ class WFLW_Dataset(Dataset):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', type=str, default='val', choices=['train', 'val'])
+    args = parser.parse_args()
 
-    dataset = WFLW_Dataset(mode='val')
-
+    dataset = WFLW_Dataset(mode=args.mode)
 
     for i in range(len(dataset)):
         image, labels = dataset[i]
-        print(labels)
-        
 
+        print(labels)
+        print('*' * 40)        
         time.sleep(2)
 
 
