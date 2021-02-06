@@ -14,6 +14,7 @@ class WFLW_Dataset(Dataset):
     def __init__(self, root='data/WFLW', mode='train', load_mode = LoadMode.FACE_ONLY):
         self.root = root
         self.images_root = os.path.join(self.root, "WFLW_images")
+        self.face_shape = (112,112)
 
         self.mode = mode 
         self.load_mode = load_mode
@@ -39,10 +40,29 @@ class WFLW_Dataset(Dataset):
         if self.load_mode == LoadMode.FACE_ONLY:
             rect = labels['rect']
             landmarks = labels['landmarks']
-            (x1, y1), (x2, y2) = rect            
-            image = image[int(x1):int(x2), int(y1):int(y2)]
-            landmarks -= rect[0]
 
+            # crop face
+            (x1, y1), (x2, y2) = rect            
+            image = image[int(y1):int(y2), int(x1):int(x2)]
+
+            # resize the image & store the dims to resize landmarks
+            h, w = image.shape[:2]
+            image = cv2.resize(image, self.face_shape)
+            new_h, new_w = self.face_shape
+
+            # scale factor in x & y to scale the landmarks
+            fx = new_w / w
+            fy = new_h / h
+            # translate the landmarks then scale them
+            landmarks -= rect[0]
+            for landmark in landmarks:
+                landmark[0] *= fx
+                landmark[1] *= fy
+
+            # face rect
+            rect[0] = (0,0)
+            rect[1] = (x2-x1, y2-y1)
+        
         return image, labels
 
     def read_annotations(self, index):
