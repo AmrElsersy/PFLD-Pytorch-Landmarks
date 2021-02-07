@@ -1,3 +1,10 @@
+"""
+Author: Amr Elsersy
+email: amrelsersay@gmail.com
+-----------------------------------------------------------------------------------
+Description: WFLW Dataset module to read images with annotations
+"""
+
 import os, time, enum
 from PIL import Image
 import argparse
@@ -123,7 +130,7 @@ if __name__ == "__main__":
         image, labels = dataset[i]
 
         print(labels)
-        print('*' * 40)        
+        print('***' * 40, '\n')        
         time.sleep(2)
 
 

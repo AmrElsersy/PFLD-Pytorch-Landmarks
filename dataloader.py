@@ -1,3 +1,10 @@
+"""
+Author: Amr Elsersy
+email: amrelsersay@gmail.com
+-----------------------------------------------------------------------------------
+Description: Dataloader creation
+"""
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 from dataset import WFLW_Dataset, LoadMode

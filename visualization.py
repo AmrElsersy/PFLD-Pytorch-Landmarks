@@ -1,3 +1,9 @@
+"""
+Author: Amr Elsersy
+email: amrelsersay@gmail.com
+-----------------------------------------------------------------------------------
+Description: Visualization of dataset with annotations in cv2 & tensorboard
+"""
 
 import numpy as np
 import cv2
@@ -10,7 +16,7 @@ from torchvision.utils import make_grid
 import torch.utils.tensorboard as tensorboard
 
 class WFLW_Visualizer:
-    def __init__(self, mode = LoadMode.FULL_IMG):
+    def __init__(self, mode = LoadMode.FACE_ONLY):
         self.mode = mode
         self.writer = tensorboard.SummaryWriter("tensorboard")
 
