@@ -85,22 +85,26 @@ class WFLW_Dataset(Dataset):
         rect = annotations[196:200]        
         attributes = annotations[200:206]
         image_name = annotations[206]
+        euler_angles = annotations[207:210]
 
         # strings to num
         landmarks = [float(landmark) for landmark in landmarks]
         rect = [float(coord) for coord in rect]
         attributes = [int(attribute) for attribute in attributes]
-
+        euler_angles = [float(angle) for angle in euler_angles]
+        
         # list to numpy 
         landmarks = np.array(landmarks, dtype=np.float).reshape(98,2)
         rect = np.array(rect, dtype=np.float).reshape((2,2))
         attributes = np.array(attributes, dtype=np.int).reshape((6,))
+        euler_angles = np.array(euler_angles, dtype=np.float).reshape((3,))
 
         labels = {
             "landmarks" : landmarks,
             "rect"      : rect,
             "attributes": attributes,
-            "image_name": image_name
+            "image_name": image_name,
+            "euler_angles": euler_angles
         }
 
         return labels

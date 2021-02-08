@@ -142,6 +142,7 @@ if __name__ == "__main__":
         
         image = visualizer.draw_euler_angles(image, rvec, tvec, euler_angles, eular_estimator.camera_intrensic_matrix)
 
+        print ("*" * 80, '\n\n\t press n for next example .... ESC to exit')
         visualizer.show(image)
 
         if visualizer.user_press == 27:
