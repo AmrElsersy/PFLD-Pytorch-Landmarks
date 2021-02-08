@@ -110,7 +110,16 @@ class EulerAngles:
                 tvec: translate vector (world origin position relative to the camera 3d coord system)
                 _ : error -not important-.
         """
+        
         _, rvec, tvec = cv2.solvePnP(self.landmarks_3D, landmarks_2D, self.camera_intrensic_matrix, distCoeffs=None)
+
+
+        """
+            note:
+                tvec is almost constant = the world origin coord with respect to the camera
+                avarage value of tvec = [-1,-2,-21]
+                we can use this directly without computing tvec
+        """
 
         # convert rotation vector to rotation matrix .. note: function is used for vice versa
         # rotation matrix that transform from model coord(object model 3D space) to the camera 3D coord space
@@ -124,7 +133,6 @@ class EulerAngles:
         euler_angles = cv2.RQDecomp3x3(rotation_matrix)[0]
 
         return rvec, tvec, euler_angles
-
 
 if __name__ == "__main__":
     from dataset import WFLW_Dataset
