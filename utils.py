@@ -1,15 +1,31 @@
+"""
+Author: Amr Elsersy
+email: amrelsersay@gmail.com
+-----------------------------------------------------------------------------------
+Description: utils functions for Data Augumentation & euler utils
+"""
+
 import cv2
 import numpy as np
 from euler_angles import EulerAngles
 
 # =========== Data Augumentation ===================
-def rotate(image, labels):
+def rotate(image, labels, angle):
+    # rotate image
+    # rotate landmarks
+    # change euler (just yaw)
     pass
 
 def scale(image, labels):
+    # fx, fy
+    # scale image
+    # scale landmarks with same scale
     pass
 
 def flip(image, labels):
+    # flip image
+    # flip landmarks
+    # flip euler roll
     pass
 
 # ============= Euler ==================
