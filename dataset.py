@@ -97,8 +97,8 @@ class WFLW_Dataset(Dataset):
         attributes = np.array(attributes, dtype=np.int).reshape((6,))
 
         labels = {
-            "landmarks": landmarks,
-            "rect": rect,
+            "landmarks" : landmarks,
+            "rect"      : rect,
             "attributes": attributes,
             "image_name": image_name
         }

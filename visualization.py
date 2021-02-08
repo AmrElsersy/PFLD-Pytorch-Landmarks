@@ -70,6 +70,55 @@ class WFLW_Visualizer:
 
         return images
 
+    def draw_euler_angles(self, image, rvec, tvec, euler_angles, intrensic_matrix):
+        """
+            draw euler direction in the image center 
+        """
+        # ============== OpenCV style ==============
+        # i, j, k axes in world 3D coord.
+        axis = np.identity(3) * 5
+        # axis_img_pts = intrensic * exstrinsic * axis
+        axis_pts = cv2.projectPoints(axis, rvec, tvec, intrensic_matrix, None)[0]
+
+        center = (image.shape[1]//2, image.shape[0]//2)
+
+        axis_pts = axis_pts.astype(np.int32)
+        pitch_point = tuple(axis_pts[0].ravel())
+        yaw_point   = tuple(axis_pts[1].ravel())
+        roll_point  = tuple(axis_pts[2].ravel())
+
+        pitch_color = (255,255,0)
+        yaw_color   = (0,255,255)
+        roll_color  = (0,0,255)
+
+        pitch, yaw, roll = euler_angles
+
+        cv2.line(image, center,  pitch_point, pitch_color, 5)
+        cv2.putText(image, "{:.2f}".format(pitch), (0,10), cv2.FONT_HERSHEY_PLAIN, 1, pitch_color)
+
+        cv2.line(image, center,  yaw_point, yaw_color, 5)
+        cv2.putText(image, "{:.2f}".format(yaw), (0,20), cv2.FONT_HERSHEY_PLAIN, 1, yaw_color)
+
+        cv2.line(image, center,  roll_point, roll_color, 5)
+        cv2.putText(image, "{:.2f}".format(roll), (0,30), cv2.FONT_HERSHEY_PLAIN, 1, roll_color)
+
+        # origin
+        cv2.circle(image, center, 2, (255,255,255), -1)
+
+        return image
+        # ============ 3D Graphics style ============
+        # axis = np.array([
+        #     [5, 0, 0],
+        #     [0, 5, 0],
+        #     [0, 0, 5],
+        #     [1, 1, 1]
+        # ])
+        # # convert from world coord to image 2D coord
+        # axis_pts = intrensic_matrix @ extrensic_T @ axis
+        # # convert from homoginous coord to 2D image coord.
+        # axis_pts /= axis_pts[2] 
+
+
     def visualize_tensorboard(self, images, labels, step=0):
         images = self.batch_draw_landmarks(images, labels)
         # format must be specified (N, H, W, C)

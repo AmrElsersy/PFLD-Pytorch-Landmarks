@@ -94,7 +94,8 @@ class EulerAngles:
 
             Returns:
             -------
-            rotation_matrix: rotation numpy array that transform model space to camera space
+            rvec: rotation numpy array that transform model space to camera space (3D in both)
+            tvec: translation numpy array that transform model space to camera space
             euler_angles: (pitch yaw roll) in degrees
         """
 
@@ -122,7 +123,7 @@ class EulerAngles:
         # (pitch yaw roll) in degrees
         euler_angles = cv2.RQDecomp3x3(rotation_matrix)[0]
 
-        return extrensic_matrix, euler_angles
+        return rvec, tvec, euler_angles
 
 
 if __name__ == "__main__":
@@ -137,40 +138,11 @@ if __name__ == "__main__":
         image, labels = dataset[i]
         landmarks = labels['landmarks']
 
-        extrensic_T, (pitch, yaw, roll) = eular_estimator.eular_angles_from_landmarks(landmarks)
-
-        # # Graphics style
-        # axis = np.array([
-        #     [500, 0, 0],
-        #     [0, 500, 0],
-        #     [0, 0, 500],
-        #     [1, 1, 1  ]
-        # ])
-        # # convert from world coord to image 2D coord
-        # axis_pts = eular_estimator.camera_intrensic_matrix @ extrensic_T @ axis
-        # # convert from homoginous coord to 2D image coord.
-        # axis_pts /= axis_pts[2] 
-
-        # OpenCV style
-        axis = np.identity(3) * 5
-        rvec = extrensic_T[:,:3]
-        tvec = extrensic_T[:,3]
-        axis_pts = cv2.projectPoints(axis, rvec, tvec, eular_estimator.camera_intrensic_matrix, None)[0]
-
-        # nose = tuple(landmarks[54].astype(np.int32))
-        nose = (56,56)
-
-        axis_pts = axis_pts.astype(np.int32)
-
-        cv2.line(image, nose, tuple(axis_pts[0].ravel()) ,(255,0,0), 5)
-        cv2.line(image, nose, tuple(axis_pts[1].ravel()) ,(0,255,0), 5)
-        cv2.line(image, nose, tuple(axis_pts[2].ravel()) ,(0,0,255), 5)
-        # origin
-        cv2.circle(image, nose, 2, (0,255,0), -1)
+        rvec, tvec, euler_angles = eular_estimator.eular_angles_from_landmarks(landmarks)
+        
+        image = visualizer.draw_euler_angles(image, rvec, tvec, euler_angles, eular_estimator.camera_intrensic_matrix)
 
         cv2.imshow("img",image)
         cv2.waitKey(0)
-        # visualizer.visualize(image, labels)
-
 
 
