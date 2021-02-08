@@ -1,24 +1,12 @@
 import torch
 import torch.nn as nn
 
-class DepthSepConv(nn.Module):
-    def __init__(self, in_channels, out_chanels):
-        super(DepthSepConv, self).__init__()
-        self.depth_wise_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, groups=in_channels)
-        self.point_wise_conv = nn.Conv2d(in_channels, out_chanels, kernel_size=1, stride=1)
-
-    def forward(self, x):
-        x = self.depth_wise_conv(x)
-        x = self.point_wise_conv(x)
-        return x
-
-
-class DepthSepConvMobileNet(nn.Module):
+class DepthSepConvBlock(nn.Module):
     """
         Depth wise Separable Convolution Block for MobileNet
     """
     def __init__(self, in_channels, out_chanels):
-        super(DepthSepConvMobileNet, self).__init__()
+        super(DepthSepConvBlock, self).__init__()
         """
             groups parameter: perform a groups of conv 
             https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
@@ -43,9 +31,9 @@ class DepthSepConvMobileNet(nn.Module):
 
 
 if __name__ == "__main__":
-    depth_conv = DepthSepConv(3,10)
+    depth_conv = DepthSepConvBlock(3,10)
     print(depth_conv)
-    x = torch.randn((1, 3,112,112))
+    x = torch.randn((4, 3,112,112)) # batch, Channels, W, H
     print(x.shape)
     y = depth_conv(x)
     print(y.shape)
