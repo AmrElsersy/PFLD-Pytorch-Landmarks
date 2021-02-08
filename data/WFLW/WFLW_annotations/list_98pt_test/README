@@ -1,0 +1,15 @@
+# Look at Boundary: A Boundary-Aware Face Alignment Algorithm.
+# Wayne Wu, Chen Qian, Shuo Yang, Quan Wang, Yici Cai, Qiang Zhou.
+# In CVPR 2018.
+
+
+
+Six tipical testing lists are split according to attributes label from the raw list ./list_98pt_rect_attr_train_test/list_98pt_rect_attr_test.txt
+Each list must have the label of corresponding attribute in its name to be 1 regardless of other attributes' label.
+
+
+The format of txt ground truth list (six tipical testing lists and one full testing list).
+
+  coordinates of 98 landmarks (196) + image name (1)
+  x0 y0 ... x97 y97 image_name
+

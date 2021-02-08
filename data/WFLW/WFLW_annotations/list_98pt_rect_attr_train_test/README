@@ -1,0 +1,50 @@
+# Look at Boundary: A Boundary-Aware Face Alignment Algorithm.
+# Wayne Wu, Chen Qian, Shuo Yang, Quan Wang, Yici Cai, Qiang Zhou.
+# In CVPR 2018.
+
+
+
+The format of txt ground truth list (7,500 for training and 2,500 for testing).
+
+  coordinates of 98 landmarks (196) + coordinates of upper left corner and lower right corner of detection rectangle (4) + attributes annotations (6) + image name (1)
+  x0 y0 ... x97 y97 x_min_rect y_min_rect x_max_rect y_max_rect pose expression illumination make-up occlusion blur image_name
+
+
+
+Attached the mappings between attribute names and label values.
+
+
+pose:
+
+  normal pose->0
+  large pose->1
+
+
+expression:
+
+  normal expression->0
+  exaggerate expression->1
+
+
+illumination:
+
+  normal illumination->0
+  extreme illumination->1
+
+
+make-up:
+
+  no make-up->0
+  make-up->1
+
+
+occlusion:
+
+  no occlusion->0
+  occlusion->1
+
+
+blur:
+
+  clear->0
+  blur->1
