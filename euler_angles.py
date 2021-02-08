@@ -142,7 +142,11 @@ if __name__ == "__main__":
         
         image = visualizer.draw_euler_angles(image, rvec, tvec, euler_angles, eular_estimator.camera_intrensic_matrix)
 
-        cv2.imshow("img",image)
-        cv2.waitKey(0)
+        visualizer.show(image)
+
+        if visualizer.user_press == 27:
+            cv2.destroyAllWindows()
+            break
+        
 
 

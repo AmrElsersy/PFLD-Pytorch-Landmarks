@@ -35,11 +35,14 @@ class WFLW_Visualizer:
         image = self.draw_landmarks(image, rect, landmarks)
         self.show(image)        
 
-    def show(self, image):
-        if self.mode == LoadMode.FULL_IMG:
-            image = cv2.resize(image, self.full_resize_shape)
-        elif self.mode == LoadMode.FACE_ONLY:
-            image = cv2.resize(image, self.crop_resize_shape)
+    def show(self, image, size = None):
+        if size:
+            image = cv2.resize(image, size)
+        else:
+            if self.mode == LoadMode.FULL_IMG:
+                image = cv2.resize(image, self.full_resize_shape)
+            elif self.mode == LoadMode.FACE_ONLY:
+                image = cv2.resize(image, self.crop_resize_shape)
 
         cv2.imshow(self.winname, image)
         self.user_press = cv2.waitKey(0) & 0xff
@@ -123,6 +126,7 @@ class WFLW_Visualizer:
         images = self.batch_draw_landmarks(images, labels)
         # format must be specified (N, H, W, C)
         self.writer.add_images("images", images, global_step=step, dataformats="NHWC")
+
 
 
 if __name__ == "__main__":
