@@ -20,7 +20,7 @@ from utils import *
 class WFLW_Visualizer:
     def __init__(self, mode = LoadMode.FACE_ONLY):
         self.mode = mode
-        self.writer = tensorboard.SummaryWriter("tensorboard")
+        self.writer = tensorboard.SummaryWriter("checkpoint/tensorboard")
 
         self.rect_color = (0,255,255)
         self.landmarks_color  = (0,255,0)

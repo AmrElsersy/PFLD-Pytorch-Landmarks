@@ -10,6 +10,7 @@ from PIL import Image
 import argparse
 import torch
 from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms.transforms as transforms
 import numpy as np 
 import cv2
 
@@ -18,8 +19,10 @@ class LoadMode(enum.Enum):
     FULL_IMG = 1
 
 class WFLW_Dataset(Dataset):
-    def __init__(self, root='data/WFLW', mode='train', load_mode = LoadMode.FACE_ONLY):
+    def __init__(self, root='data/WFLW', mode='train', load_mode = LoadMode.FACE_ONLY, transform=False):
         self.root = root
+        self.transform = transforms.ToTensor() if transform else None
+
         self.images_root = os.path.join(self.root, "WFLW_images")
         self.face_shape = (112,112)
 
@@ -69,7 +72,14 @@ class WFLW_Dataset(Dataset):
             # face rect
             rect[0] = (0,0)
             rect[1] = (x2-x1, y2-y1)
-        
+
+        if self.transform:
+            # convert to torch Tensor
+            image = self.transform(image)
+            labels['landmarks'] = self.transform(labels['landmarks'])
+            labels['attributes'] = self.transform(labels['attributes'].reshape(1,6))
+            labels['euler_angles'] = self.transform(labels['euler_angles'].reshape(1,3))
+
         return image, labels
 
     def read_annotations(self, index):
@@ -124,28 +134,33 @@ class WFLW_Dataset(Dataset):
 
 
 
-def create_train_loader(root='data/WFLW', batch_size = 64, mode = LoadMode.FACE_ONLY):
-    dataset = WFLW_Dataset(root, mode='train', load_mode=mode)
+def create_train_loader(root='data/WFLW', batch_size = 64, mode = LoadMode.FACE_ONLY, transform=False):
+    dataset = WFLW_Dataset(root, mode='train', load_mode=mode, transform=transform)
     dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
     return dataloader
 
-def create_test_loader(root='data/WFLW', batch_size = 1, mode = LoadMode.FULL_IMG):
-    dataset = WFLW_Dataset(root, mode='val', load_mode=mode)
+def create_test_loader(root='data/WFLW', batch_size = 1, mode = LoadMode.FACE_ONLY, transform=False):
+    dataset = WFLW_Dataset(root, mode='val', load_mode=mode, transform=transform)
     dataloader = DataLoader(dataset, shuffle=False, batch_size=batch_size)
     return dataloader
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', type=str, default='val', choices=['train', 'val'])
+    parser.add_argument('--mode', type=str, default='train', choices=['train', 'val'])
     args = parser.parse_args()
 
     dataset = WFLW_Dataset(mode=args.mode)
+    # for i in range(len(dataset)):
+    #     image, labels = dataset[i]
 
-    for i in range(len(dataset)):
-        image, labels = dataset[i]
-
-        print(labels)
+    dataloader = DataLoader(dataset, batch_size=10)
+    for image, labels in dataloader:
+        
+        print("image.shape",image.shape)
+        print("landmarks.shape",labels['landmarks'].shape)
+        print("euler_angles.shape",labels['euler_angles'].shape)
+        print("attributes.shape",labels['attributes'].shape)
         print('***' * 40, '\n')        
         time.sleep(2)
 

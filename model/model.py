@@ -7,6 +7,9 @@ Description: PFLD & Auxiliary Models for landmarks detection & head pose estimat
 import torch
 import torch.nn as nn
 
+import sys
+sys.path.insert(1, 'model')
+
 from DepthSepConv import DepthSepConvBlock
 from BottleneckResidual import BottleneckResidualBlock
 
@@ -146,7 +149,7 @@ if __name__ == "__main__":
     auxiliary = AuxiliaryNet()
     pfld = PFLD()
 
-    x = torch.randn((2, 3,112,112))
+    x = torch.randn((10, 3,112,112))
     print("x shape:",x.shape)
     features, landmarks = pfld(x)
     print("features:",features.shape)

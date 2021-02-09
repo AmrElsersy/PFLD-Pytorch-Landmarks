@@ -55,8 +55,8 @@ class PFLD_L2Loss(nn.Module):
 
 if __name__ == "__main__":
     batch_size= 1
-    landmarks = torch.randn((batch_size, 2,196)) * 255
-    gt_landmarks = torch.randn((batch_size, 2,196)) * 255
+    landmarks = torch.randn((batch_size, 98,2)) * 255
+    gt_landmarks = torch.randn((batch_size, 98,2)) * 255
 
     angles = torch.randn((batch_size, 3)) * 360
     gt_angles = torch.randn((batch_size, 3)) * 360
