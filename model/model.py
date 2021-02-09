@@ -42,7 +42,7 @@ class PFLD(nn.Module):
         # last Bottleneck to reduce channel size
         self.bottleneck_4 = BottleneckResidualBlock(128, 16, expand_factor=2, stride=1) #16x 14x14
 
-        # last layers S1 & S2 & S3 used together as input to the head
+        # last layers S1 & S2 & S3 used together as input to the head as a multi scale features
         self.conv1 = ConvBlock(in_channels=16, out_channels=32, stride=2, padding=1) # 16x 14x14 -> 32x 7x7
         self.conv2 = ConvBlock(in_channels=32, out_channels=128, kernel_size=7) # 32x 7x7 -> 128x 1x1 
 

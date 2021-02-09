@@ -1,3 +1,9 @@
+"""
+Author: Amr Elsersy
+email: amrelsersay@gmail.com
+-----------------------------------------------------------------------------------
+Description: Depth Wise Separable Conv2D used in PFLD 
+"""
 import torch
 import torch.nn as nn
 
