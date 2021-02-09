@@ -58,16 +58,18 @@ class PFLD(nn.Module):
         x = self.depth_wise_conv(x)
         # print("depthwise:", x.shape)
         
-        # bottelneck blocks
+        # ======== bottelneck blocks ========
 
-        # bottleneck 1
-        x = self.bottleneck_1_first(x)
+        # ======== bottleneck 1 ========
+        x = self.bottleneck_1_first(x) 
         for block1 in self.bottleneck_1:
             x = block1(x)
         # print("block1:", x.shape)
 
-        # bottleneck 2
-        x = self.bottleneck_2(x)
+        # Auxiliary Network takes that branch as its input
+        features_auxiliary = x
+        # ======== bottleneck 2 ========
+        x = self.bottleneck_2(features_auxiliary)
         # print("block2:", x.shape)
 
         # bottleneck 3
@@ -75,9 +77,11 @@ class PFLD(nn.Module):
             x = block3(x)
         # print("block3:", x.shape)
 
-        # bottleneck 4
+        # ======== bottleneck 4 ========
         x = self.bottleneck_4(x)
         # print("block4:", x.shape)
+
+        # ======== S1 & S2 & S3 ========
         s1 = self.avg_pool1(x)
         s1 = s1.view(s1.shape[0], -1)
         # print("s1 avg_pool1:", s1.shape)
@@ -98,7 +102,7 @@ class PFLD(nn.Module):
         # print("multiscale:",multi_scale_features.shape)
         landmarks = self.fc(multi_scale_features)
         # print("landmarks:", landmarks.shape)
-        return landmarks
+        return features_auxiliary, landmarks
 
 
 class AuxiliaryNet(nn.Module):
@@ -142,13 +146,12 @@ if __name__ == "__main__":
     auxiliary = AuxiliaryNet()
     pfld = PFLD()
 
-    # x = torch.randn((1, 64,28,28))
-    # print(x.shape)
-    # y = auxiliary(x)
-
     x = torch.randn((2, 3,112,112))
-    print(x.shape)
-    y = pfld(x)
+    print("x shape:",x.shape)
+    features, landmarks = pfld(x)
+    print("features:",features.shape)
+    print("landmarks:",landmarks.shape)
 
-    print(y.shape)
+    euler_angles = auxiliary(features)
+    print("euler_angles", euler_angles.shape)
 
