@@ -6,7 +6,7 @@ class DepthSepConvBlock(nn.Module):
         Depth wise Separable Convolution Block for MobileNet
         Used in PFLD backbone
     """
-    def __init__(self, in_channels, out_chanels):
+    def __init__(self, in_channels, out_channels):
         super(DepthSepConvBlock, self).__init__()
         """
             groups parameter: perform a groups of conv 
@@ -15,8 +15,8 @@ class DepthSepConvBlock(nn.Module):
         self.depth_wise_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, groups=in_channels,padding=1)
         self.bn1 = nn.BatchNorm2d(in_channels)
         self.relu = nn.ReLU()
-        self.point_wise_conv = nn.Conv2d(in_channels, out_chanels, kernel_size=1, stride=1)
-        self.bn2 = nn.BatchNorm2d(out_chanels)
+        self.point_wise_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1)
+        self.bn2 = nn.BatchNorm2d(out_channels)
 
     def forward(self, x):
         # depth wise

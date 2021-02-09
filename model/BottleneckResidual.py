@@ -12,12 +12,13 @@ class BottleneckResidualBlock(nn.Module):
         Inverted Resuedial Linear Block from MobileNetv2 paper
         Uses Depth wise Conv & Residual & Expant-Squeeze 
     """
-    def __init__(self, in_channels, out_channels, expand_factor=2, stride = 1, padding=1):
+    def __init__(self, in_channels, out_channels, expand_factor=2, stride = 1, padding=1, force_residual=False):
         super(BottleneckResidualBlock, self).__init__()
 
         # residual component is not used in case of stride = 1 & in_n = out_n  
         assert stride in [1,2]
         self.use_residual_component = True if stride == 1 and in_channels == out_channels else False
+        self.use_residual_component = True if force_residual else False
 
         # Expantion 1x1 Conv to increase num of channels
         expand_channels = in_channels * expand_factor

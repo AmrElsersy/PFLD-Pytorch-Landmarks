@@ -4,7 +4,6 @@ email: amrelsersay@gmail.com
 -----------------------------------------------------------------------------------
 Description: utils functions for Data Augumentation & euler utils
 """
-
 import cv2
 import numpy as np
 from euler_angles import EulerAngles
@@ -14,25 +13,21 @@ def rotate(image, labels, angle):
     # rotate image
     # rotate landmarks
     # change euler (just yaw)
-    pass
+    return image, labels
 
 def scale(image, labels):
     # fx, fy
     # scale image
     # scale landmarks with same scale
-    pass
+    return image, labels
 
 def flip(image, labels):
     # flip image
     # flip landmarks
-    # flip euler roll
-    pass
+    # flip euler roll angle
+    return image, labels
 
 # ============= Euler ==================
-def get_intrensic_matrix(image):
-    e = EulerAngles((image.shape[0], image.shape[1]))
-    return e.camera_intrensic_matrix
-
 def euler_to_rotation(euler_angles) :
      
     
@@ -53,6 +48,9 @@ def euler_to_rotation(euler_angles) :
                      
                      
     R = R_x @ R_y @ R_z
-
     return R        
+
+def get_intrensic_matrix(image):
+    e = EulerAngles((image.shape[0], image.shape[1]))
+    return e.camera_intrensic_matrix
 

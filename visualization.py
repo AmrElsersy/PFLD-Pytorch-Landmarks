@@ -189,6 +189,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--full_img', action="store_true", help="full image with 1 face rect or only the face")
     parser.add_argument('--tensorboard', action='store_true', help="visualize images to tensorboard")
+    parser.add_argument('--stop_batch', type=int, default=5, help="tensorboard batch index to stop")
     args = parser.parse_args()
     # ================================
 
@@ -221,7 +222,7 @@ if __name__ == "__main__":
             visualizer.visualize_tensorboard(images, labels, batch)
             print ("*" * 60, f'\n\n\t Saved {batch_size} images with Step{batch}. run tensorboard @ project root')
             
-            if batch == 5:
+            if batch == args.stop_batch:
                 break
 
         visualizer.writer.close()
