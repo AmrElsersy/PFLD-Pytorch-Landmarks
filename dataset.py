@@ -123,6 +123,18 @@ class WFLW_Dataset(Dataset):
             return len(self.test_lines)
 
 
+
+def create_train_loader(root='data/WFLW', batch_size = 64, mode = LoadMode.FACE_ONLY):
+    dataset = WFLW_Dataset(root, mode='train', load_mode=mode)
+    dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
+    return dataloader
+
+def create_test_loader(root='data/WFLW', batch_size = 1, mode = LoadMode.FULL_IMG):
+    dataset = WFLW_Dataset(root, mode='val', load_mode=mode)
+    dataloader = DataLoader(dataset, shuffle=False, batch_size=batch_size)
+    return dataloader
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', type=str, default='val', choices=['train', 'val'])
