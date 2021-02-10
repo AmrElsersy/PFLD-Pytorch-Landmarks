@@ -13,6 +13,8 @@ sys.path.insert(1, 'model')
 from DepthSepConv import DepthSepConvBlock
 from BottleneckResidual import BottleneckResidualBlock
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def ConvBlock(in_channels, out_channels, kernel_size=3, stride=1, padding=0):
     return nn.Sequential(
         nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
@@ -24,26 +26,26 @@ class PFLD(nn.Module):
     def __init__(self):
         super(PFLD, self).__init__()
         self.conv = ConvBlock(in_channels=3, out_channels=64, stride=2, padding=1)
-        self.depth_wise_conv = DepthSepConvBlock(in_channels=64, out_channels=64)
+        self.depth_wise_conv = DepthSepConvBlock(in_channels=64, out_channels=64).to(device)
         
         # 1 Bottlenck Non-Resiudal(as stride =2) used for reducing tensor dim size
-        self.bottleneck_1_first = BottleneckResidualBlock(64, 64, expand_factor=2, stride=2)
+        self.bottleneck_1_first = BottleneckResidualBlock(64, 64, expand_factor=2, stride=2).to(device)
         # 4 Bottleneck Residual Blocks with the same in/out channel size
         self.bottleneck_1 = []
         for i in range(4):
-            self.bottleneck_1.append(BottleneckResidualBlock(64, 64, expand_factor=2, stride=1))
+            self.bottleneck_1.append(BottleneckResidualBlock(64, 64, expand_factor=2, stride=1).to(device))
 
         # 1 Bottleneck to expand channel size
-        self.bottleneck_2 = BottleneckResidualBlock(64, 128, expand_factor=2, stride=2)        
+        self.bottleneck_2 = BottleneckResidualBlock(64, 128, expand_factor=2, stride=2).to(device)        
         
         # 6 Bottleneck Resiudal Blocks with the same in/out channel size
-        self.bottleneck_3_first = BottleneckResidualBlock(128,128, expand_factor=4, stride=1)
+        self.bottleneck_3_first = BottleneckResidualBlock(128,128, expand_factor=4, stride=1).to(device)
         self.bottleneck_3 = []
         for i in range(6):
-            self.bottleneck_3.append(BottleneckResidualBlock(128,128, expand_factor=4, stride=1))
+            self.bottleneck_3.append(BottleneckResidualBlock(128,128, expand_factor=4, stride=1).to(device))
 
         # last Bottleneck to reduce channel size
-        self.bottleneck_4 = BottleneckResidualBlock(128, 16, expand_factor=2, stride=1) #16x 14x14
+        self.bottleneck_4 = BottleneckResidualBlock(128, 16, expand_factor=2, stride=1).to(device) #16x 14x14
 
         # last layers S1 & S2 & S3 used together as input to the head as a multi scale features
         self.conv1 = ConvBlock(in_channels=16, out_channels=32, stride=2, padding=1) # 16x 14x14 -> 32x 7x7

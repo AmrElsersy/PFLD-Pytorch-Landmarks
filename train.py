@@ -69,7 +69,7 @@ def main():
     # ========================================================================
     for epoch in range(args.epochs):
         # =========== train / validate ===========
-        w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
+        # w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
         val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
         # ============= tensorboard =============
         writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
@@ -91,21 +91,21 @@ def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloade
     loss = 0
     batches_in_epoch = 7500 // args.batch_size  
     for batch, (image, labels) in enumerate(dataloader):
-        print("*"*70,'\n')
-        print(f'\tbatch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
+        print("*"*70,f'\n\tbatch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
 
         euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
         attributes = labels['attributes'].squeeze() # shape (batch, 6)
         landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
         landmarks = landmarks.reshape((landmarks.shape[0], 196)) # reshape landmarks to match loss function
 
-        image = image.to(device)
+        pfld_model = pfld_model.cuda()
+        auxiliary_model = auxiliary_model.to(device)
+        image = image.cuda()
         landmarks = landmarks.to(device)
         euler_angles = euler_angles.to(device)
         attributes = attributes.to(device)
-        pfld_model = pfld_model.to(device)
-        auxiliary_model = auxiliary_model.to(device)
-
+ 
+        print(pfld_model.cuda)
         featrues, pred_landmarks = pfld_model(image)
         pred_angles = auxiliary_model(featrues)
 
@@ -131,7 +131,6 @@ def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch_idx):
             print("*"*70,'\n')
             print(f'\tbatch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
 
-            image = image.to(device) # shape (batch, 3, 112, 112)
             euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
             attributes = labels['attributes'].squeeze() # shape (batch, 6)
             landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
