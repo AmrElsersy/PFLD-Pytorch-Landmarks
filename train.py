@@ -46,7 +46,7 @@ def main():
 
     # dataloaders
     train_dataloader = create_train_loader(root=args.datapath,batch_size=args.batch_size, transform=True)
-    test_dataloader  = create_test_loader(root=args.datapath, batch_size=1, transform=True)    
+    test_dataloader  = create_test_loader(root=args.datapath, batch_size=args.batch_size, transform=True)    
     # models & loss  
     pfld = PFLD().to(device)
     auxiliarynet = AuxiliaryNet().to(device)
@@ -87,21 +87,31 @@ def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloade
 
 
 def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch_idx):
-    with torch.no_grad:
-        pass
+    validation_losses = []
+    pfld_model.eval()
+    auxiliary_model.eval()
 
-        # # remove that after testing
-        # l = {}
-        # l['landmarks'] = landmarks[0].numpy()
-        # l['euler_angles'] = euler_angles[0].numpy()
-        # l['attributes'] = attributes[0].numpy()
-        # l['rect'] = rect[0].numpy()
-        # img = image[0]
+    with torch.no_grad():
+        for batch, (image, labels) in enumerate(dataloader):
+            print(f"************************ batch {batch}/750  epoch {epoch_idx} ************************")
 
-        # print("image",image.shape)
-        # print("landmarks",landmarks.shape)
-        # print("euler",euler_angles.shape)
-        # print("attributes",attributes.shape)
+            image = image.to(device) # shape (batch, 3, 112, 112)
+            landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
+            euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
+            attributes = labels['attributes'].squeeze() # shape (batch, 6)
+            rect = labels['rect'].squeeze()
+
+            featrues, pred_landmarks = pfld_model(image)
+            pred_angles = auxiliary_model(featrues)
+
+            pred_landmarks = pred_landmarks.reshape((pred_landmarks.shape[0], 98, 2))
+            weighted_loss, loss = criterion(pred_landmarks, landmarks, pred_angles, euler_angles, attributes)
+            print("val_weighted_loss=",weighted_loss.item(), " ... val_loss=", loss.item())
+            validation_losses.append(loss.cpu().numpy())
+
+        print('Eval set: Average loss: {:.4f} '.format(np.mean(validation_losses)))
+        return np.mean(validation_losses)
+
 
 if __name__ == "__main__":
     main()
