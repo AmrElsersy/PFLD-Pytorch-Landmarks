@@ -41,7 +41,7 @@ class PFLD_L2Loss(nn.Module):
         # if we don't get the max .. all attributes =0 so weight will be 0 even if there is an error in
         # landmarks & angle, so we add a hing 1 to that weight to limit that .. same for angles
         attributes_weight += 1
-        # angles_weight += 1
+        angles_weight += 1
 
         # L2 Landmarks Loss
         # shape (batch_size, 1) ... mean on both axes(1,2) to sum all x & all y seperatly them sum them

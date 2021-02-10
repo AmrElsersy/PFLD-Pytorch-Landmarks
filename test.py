@@ -30,8 +30,6 @@ from utils import to_numpy_image
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=20, help="training batch size")
-    parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--datapath', type=str, default='data/WFLW', help='root path of WFLW dataset')
     parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth.tar',help='load weights')
     args = parser.parse_args()
@@ -41,11 +39,10 @@ def parse_args():
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 args = parse_args()
-writer = tensorboard.SummaryWriter(args.tensorboard)
 
 def main():
     # ========= dataset ===========
-    dataset = WFLW_Dataset(root=args.datapath, mode='train', transform=True)
+    dataset = WFLW_Dataset(root=args.datapath, mode='val', transform=True)
     visualizer = WFLW_Visualizer()
     # =========== models ============= 
     pfld = PFLD().to(device)
@@ -90,17 +87,59 @@ def main():
             img2[:,:] = 0
 
             img = visualizer.draw_landmarks(img, pred_landmarks)
-            # img2 = visualizer.draw_landmarks(img2, pred_landmarks)
-            # cv2.imshow("RR",img2)
-
             visualizer.show(img)
+
+            # img2 = visualizer.draw_landmarks(img2, pred_landmarks)
+            # visualizer.show(img2)
             print('*'*70,'\n')
 
             if visualizer.user_press == 27:
                 break
 
-    writer.close()
+def overfit_one_mini_batch():
+
+    # ========= dataset ===========
+    dataloader = create_test_loader(batch_size=20, transform=True)
+    # =========== models ============= 
+    pfld_model = PFLD().to(device)
+    auxiliary_model = AuxiliaryNet().to(device)
+
+    pfld_model.train()
+    auxiliary_model.train()
+    criterion = PFLD_L2Loss().to(device)
+    parameters = list(pfld_model.parameters()) + list(auxiliary_model.parameters())
+    optimizer = torch.optim.Adam(parameters, lr=0.0001, weight_decay=1e-6)
+    
+    image, labels = next(iter(dataloader))
+    print(image.shape)
+    time.sleep(5)
+    for i in range(6000):
+        euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
+        attributes = labels['attributes'].squeeze() # shape (batch, 6)
+        landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
+        landmarks = landmarks.reshape((landmarks.shape[0], 196)) # reshape landmarks to match loss function
+
+        image = image.to(device)
+        landmarks = landmarks.to(device)
+        euler_angles = euler_angles.to(device)
+        attributes = attributes.to(device)
+        pfld_model = pfld_model.to(device)
+        auxiliary_model = auxiliary_model.to(device)
+ 
+        featrues, pred_landmarks = pfld_model(image)
+        pred_angles = auxiliary_model(featrues)
+        weighted_loss, loss = criterion(pred_landmarks, landmarks, pred_angles, euler_angles, attributes)
+
+        train_w_loss = round(weighted_loss.item(),3)
+        train_loss = round(loss.item(),3)
+        print(f"\t.. weighted_loss= {train_w_loss} ... loss={train_loss}")
+
+        optimizer.zero_grad()
+        weighted_loss.backward()
+        optimizer.step()
+
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    overfit_one_mini_batch()
