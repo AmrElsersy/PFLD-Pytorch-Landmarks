@@ -79,7 +79,11 @@ class WFLW_Dataset(Dataset):
             image = self.transform(image)
             # print('after image:',image)
             # print(labels['landmarks'])
+
+            # Noramlization Landmarks
+            labels['landmarks'] = np.clip(labels['landmarks'], 0.0, 112.0)
             labels['landmarks'] = self.transform(labels['landmarks']) / 112
+
             # print('after',labels['landmarks'])
             labels['attributes'] = self.transform(labels['attributes'].reshape(1,6))
             labels['euler_angles'] = self.transform(labels['euler_angles'].reshape(1,3))

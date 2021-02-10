@@ -65,28 +65,22 @@ def main():
             image, labels = dataset[i]
 
             image = image.unsqueeze(0)
-            landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
-            # landmarks = landmarks.reshape((1, 196)) # reshape landmarks to match loss function
-
-            # print('landmarks:',landmarks.shape)
-            # print('attributes:',attributes.shape)
-            # print('image:',image.shape)
-            # print('euler:',euler_angles.shape)
-
             image = image.to(device)
-            # landmarks = landmarks.to(device)
+            landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
 
             pfld = pfld.to(device)
             auxiliarynet = auxiliarynet.to(device)
-
             featrues, pred_landmarks = pfld(image)
             pred_angles = auxiliarynet(featrues)
+
             pred_landmarks = pred_landmarks.cpu().reshape(98,2).numpy()
             image = to_numpy_image(image[0].cpu())
 
+            print("*"*80,"\npredicted:",pred_landmarks)
+            print("*"*80,"\labels:",landmarks)
+
             pred_landmarks = (pred_landmarks*112).astype(np.int32) 
-            print(pred_landmarks)
-            print(landmarks)
+
             image = (image*255).astype(np.uint8)
             image = np.clip(image, 0, 255)
 
