@@ -2,12 +2,13 @@
 Author: Amr Elsersy
 email: amrelsersay@gmail.com
 -----------------------------------------------------------------------------------
-Description: training script
+Description: Training & Validation
 """
 import numpy as np 
 import argparse
 import logging
 import time
+import os
 
 import torch
 import torch.nn as nn
@@ -25,58 +26,88 @@ from model.BottleneckResidual import BottleneckResidualBlock
 
 from utils import to_numpy_image
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-visualizer = WFLW_Visualizer()
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=10, help='num of training epochs')
     parser.add_argument('--batch_size', type=int, default=10, help="training batch size")
     parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--logging', type=str, default='checkpoint/logging', help='path of logging')
-    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-6, help='optimizer weight decay')
     parser.add_argument('--datapath', type=str, default='data/WFLW', help='root path of WFLW dataset')
+    parser.add_argument('--pretrained', type=str,default='checkpoint/model_weights/weights.pth.tar',help='load checkpoint')
+    parser.add_argument('--resume', action='store_true', help='resume from pretrained path specified in prev arg')
+    parser.add_argument('--savepath', type=str, default='checkpoint/model_weights/weights.pth.tar', help='save checkpoint')    
+    parser.add_argument('--savefreq', type=int, default=2, help="save weights each freq num of epochs")
     args = parser.parse_args()
     return args
 
-def main():
-    args = parse_args()
-    writer = tensorboard.SummaryWriter(args.tensorboard)
+# ======================================================================
 
-    # dataloaders
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+args = parse_args()
+writer = tensorboard.SummaryWriter(args.tensorboard)
+
+def main():
+    # ========= dataloaders ===========
     train_dataloader = create_train_loader(root=args.datapath,batch_size=args.batch_size, transform=True)
     test_dataloader  = create_test_loader(root=args.datapath, batch_size=args.batch_size, transform=True)    
-    # models & loss  
+    # ======== models & loss ========== 
     pfld = PFLD().to(device)
     auxiliarynet = AuxiliaryNet().to(device)
     loss = PFLD_L2Loss().to(device)
-    # optimizer & scheduler
+    # =========== optimizer =========== 
     parameters = list(pfld.parameters()) + list(auxiliarynet.parameters())
     optimizer = torch.optim.Adam(parameters, lr=args.lr, weight_decay=args.weight_decay)
-
+    # ========= load weights ===========
+    if args.resume:
+        checkpoint = torch.load(args.pretrained)
+        pfld.load_state_dict(checkpoint["pfld"])
+        auxiliarynet.load_state_dict(checkpoint["auxiliary"])
+        print(f'\tLoaded checkpoint from {args.pretrained}\n')
+    # ========= train-val-save =========
     for epoch in range(args.epochs):
-        train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
-        validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
+        # # train / validate
+        # w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
+        # val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
+        # # tensorboard
+        # writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
+        # writer.add_scalar('train_loss',train_loss, epoch)
+        # writer.add_scalar('val_loss',val_loss, epoch)
+        # save model
+        if epoch % args.savefreq == 0:
+            checkpoint_state = {
+                "pfld": pfld.state_dict(),
+                "auxiliary": auxiliarynet.state_dict()
+            }
+            torch.save(checkpoint_state, args.savepath)
+            print(f'\tSaved checkpoint in {args.savepath}\n')
+
+    writer.close()
 
 def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloader, epoch_idx):
 
+    weighted_loss = 0
+    loss = 0
+    batches_in_epoch = args.batch_size // 7500
     for batch, (image, labels) in enumerate(dataloader):
-        print(f"************************ batch {batch}/750  epoch {epoch_idx} ************************")
+        print("*"*70,'\n')
+        print(f'\tbatch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
 
-        image = image.to(device) # shape (batch, 3, 112, 112)
-        landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
         euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
         attributes = labels['attributes'].squeeze() # shape (batch, 6)
-        rect = labels['rect'].squeeze()
+        landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
+        landmarks = landmarks.reshape((landmarks.shape[0], 196)) # reshape landmarks to match loss function
+
+        image = image.to(device)
+        landmarks = landmarks.to(device)
+        euler_angles = euler_angles.to(device)
+        attributes = attributes.to(device)
+        pfld_model = pfld_model.to(device)
+        auxiliary_model = auxiliary_model.to(device)
 
         featrues, pred_landmarks = pfld_model(image)
         pred_angles = auxiliary_model(featrues)
-
-        print("pred_landmarks",pred_landmarks.shape)
-        print("pred_angles",pred_angles.shape)
-
-        pred_landmarks = pred_landmarks.reshape((pred_landmarks.shape[0], 98, 2))
 
         weighted_loss, loss = criterion(pred_landmarks, landmarks, pred_angles, euler_angles, attributes)
         print("weighted_loss=",weighted_loss.item(), " ... loss=", loss.item())
@@ -85,32 +116,44 @@ def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloade
         weighted_loss.backward()
         optimizer.step()
 
+    return weighted_loss.item(), loss.item()    
+
 
 def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch_idx):
     validation_losses = []
     pfld_model.eval()
     auxiliary_model.eval()
 
+    batches_in_epoch = args.batch_size // 2500
+
     with torch.no_grad():
         for batch, (image, labels) in enumerate(dataloader):
-            print(f"************************ batch {batch}/750  epoch {epoch_idx} ************************")
+            print("*"*70,'\n')
+            print(f'\tbatch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
 
             image = image.to(device) # shape (batch, 3, 112, 112)
-            landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
             euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
             attributes = labels['attributes'].squeeze() # shape (batch, 6)
-            rect = labels['rect'].squeeze()
+            landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
+            landmarks = landmarks.reshape((landmarks.shape[0], 196)) # reshape landmarks to match loss function
+
+            image = image.to(device)
+            landmarks = landmarks.to(device)
+            euler_angles = euler_angles.to(device)
+            attributes = attributes.to(device)
+            pfld_model = pfld_model.to(device)
+            auxiliary_model = auxiliary_model.to(device)
 
             featrues, pred_landmarks = pfld_model(image)
             pred_angles = auxiliary_model(featrues)
 
-            pred_landmarks = pred_landmarks.reshape((pred_landmarks.shape[0], 98, 2))
             weighted_loss, loss = criterion(pred_landmarks, landmarks, pred_angles, euler_angles, attributes)
             print("val_weighted_loss=",weighted_loss.item(), " ... val_loss=", loss.item())
             validation_losses.append(loss.cpu().numpy())
 
-        print('Eval set: Average loss: {:.4f} '.format(np.mean(validation_losses)))
-        return np.mean(validation_losses)
+        avg_val_loss = np.mean(validation_losses).item()
+        print('Eval set: Average loss: {:.4f} '.format(avg_val_loss))
+        return avg_val_loss
 
 
 if __name__ == "__main__":

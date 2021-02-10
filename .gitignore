@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 WFLW/
 tensorboard/
-
+*.tar
 # C extensions
 *.so
 

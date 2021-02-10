@@ -44,7 +44,7 @@ class PFLD_L2Loss(nn.Module):
 
         # L2 Landmarks Loss
         # shape (batch_size, 1) ... mean on both axes(1,2) to sum all x & all y seperatly them sum them
-        landmarks_loss = torch.sum((landmarks-gt_landmarks)**2, (1,2))
+        landmarks_loss = torch.sum((landmarks-gt_landmarks)**2, 1)
 
         # print("angles_weight:", angles_weight)
         # print("attributes_weight", attributes_weight)
@@ -55,8 +55,8 @@ class PFLD_L2Loss(nn.Module):
 
 if __name__ == "__main__":
     batch_size= 1
-    landmarks = torch.randn((batch_size, 98,2)) * 255
-    gt_landmarks = torch.randn((batch_size, 98,2)) * 255
+    landmarks = torch.randn((batch_size, 196)) * 255
+    gt_landmarks = torch.randn((batch_size, 196)) * 255
 
     angles = torch.randn((batch_size, 3)) * 360
     gt_angles = torch.randn((batch_size, 3)) * 360
