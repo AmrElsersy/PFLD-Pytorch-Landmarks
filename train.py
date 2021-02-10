@@ -9,6 +9,7 @@ import argparse
 import logging
 import time
 import os
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -68,13 +69,13 @@ def main():
 
     # ========================================================================
     for epoch in range(args.epochs):
-        # =========== train / validate ===========
+        # # =========== train / validate ===========
         # w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
-        val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
-        # ============= tensorboard =============
-        writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
-        writer.add_scalar('train_loss',train_loss, epoch)
-        writer.add_scalar('val_loss',val_loss, epoch)
+        # val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
+        # # ============= tensorboard =============
+        # writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
+        # writer.add_scalar('train_loss',train_loss, epoch)
+        # writer.add_scalar('val_loss',val_loss, epoch)
         # ============== save model =============
         if epoch % args.savefreq == 0:
             checkpoint_state = {
@@ -91,21 +92,20 @@ def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloade
     loss = 0
     batches_in_epoch = 7500 // args.batch_size  
     for batch, (image, labels) in enumerate(dataloader):
-        print("*"*70,f'\n\tbatch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
+        print("*"*70,f'\n\ttraining .. batch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
 
         euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
         attributes = labels['attributes'].squeeze() # shape (batch, 6)
         landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
         landmarks = landmarks.reshape((landmarks.shape[0], 196)) # reshape landmarks to match loss function
 
-        pfld_model = pfld_model.cuda()
-        auxiliary_model = auxiliary_model.to(device)
-        image = image.cuda()
+        image = image.to(device)
         landmarks = landmarks.to(device)
         euler_angles = euler_angles.to(device)
         attributes = attributes.to(device)
+        pfld_model = pfld_model.to(device)
+        auxiliary_model = auxiliary_model.to(device)
  
-        print(pfld_model.cuda)
         featrues, pred_landmarks = pfld_model(image)
         pred_angles = auxiliary_model(featrues)
 
@@ -128,8 +128,7 @@ def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch_idx):
 
     with torch.no_grad():
         for batch, (image, labels) in enumerate(dataloader):
-            print("*"*70,'\n')
-            print(f'\tbatch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
+            print("*"*70,f'\n\tvalidation .. batch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
 
             euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
             attributes = labels['attributes'].squeeze() # shape (batch, 6)
@@ -157,11 +156,10 @@ def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch_idx):
 
 if __name__ == "__main__":
     main()
-    # logging.log("Ray2")
 
-    import torchvision.transforms.transforms as transforms
-    transform = transforms.Compose([transforms.ToTensor()])    
-    dataset = WFLW_Dataset(mode='train', transform=True)
+    # import torchvision.transforms.transforms as transforms
+    # transform = transforms.Compose([transforms.ToTensor()])    
+    # dataset = WFLW_Dataset(mode='train', transform=True)
     # # ============ From tensor to image ... crahses in any function in cv2 ==================
     # dataloader = create_train_loader(transform=True)
     # for images, labels in dataloader:
