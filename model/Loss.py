@@ -25,30 +25,30 @@ class PFLD_L2Loss(nn.Module):
         # note torch.cos accepts only radians
         # angles_weight.shape (batch_size, 1)
         # print(angles, gt_angles)
-        angles_weight = torch.sum(1-torch.cos(torch.deg2rad(angles-gt_angles)), axis=1)
+        # angles_weight = torch.sum(1-torch.cos(torch.deg2rad(angles-gt_angles)), axis=1)
+        angles_weight = torch.sum(1-torch.cos(angles-gt_angles), axis=1)
 
         # attributes weight .... v1
-        # attributes = attributes.float()
-        # mat_ratio = torch.mean(attributes, axis=0)
+        # attributes_w_n = attributes[:, 1:6].float()
+        # mat_ratio = torch.mean(attributes_w_n, axis=0)
         # mat_ratio = torch.Tensor([1.0 / (x) if x > 0 else batch_size for x in mat_ratio]).to(device)
-        # attributes_weight = torch.sum(attributes.mul(mat_ratio), axis=1)        
+        # attributes_weight = torch.sum(attributes_w_n.mul(mat_ratio), axis=1)
 
         # attributes weight .... v2
         attributes = attributes.float()
-        attributes_weight = torch.mean(attributes, axis=1)        
+        attributes_weight = torch.sum(attributes, axis=1)        
 
         # if we don't get the max .. all attributes =0 so weight will be 0 even if there is an error in
         # landmarks & angle, so we add a hing 1 to that weight to limit that .. same for angles
         attributes_weight += 1
-        angles_weight += 1
+        # angles_weight += 1
 
         # L2 Landmarks Loss
         # shape (batch_size, 1) ... mean on both axes(1,2) to sum all x & all y seperatly them sum them
         landmarks_loss = torch.sum((landmarks-gt_landmarks)**2, 1)
 
-        print(f"angles_weight: {angles_weight} ... attributes_weight: {attributes_weight}")
         # print("landmakrs loss", landmarks_loss)
-
+        print(f"\nangles_weight: {angles_weight} ... \nattributes_weight: {attributes_weight}")
         # mean on batch size
         return torch.mean(attributes_weight * angles_weight * landmarks_loss) , torch.mean(landmarks_loss)
 
