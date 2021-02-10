@@ -65,16 +65,17 @@ def main():
         pfld.load_state_dict(checkpoint["pfld"])
         auxiliarynet.load_state_dict(checkpoint["auxiliary"])
         print(f'\tLoaded checkpoint from {args.pretrained}\n')
-    # ========= train-val-save =========
+
+    # ========================================================================
     for epoch in range(args.epochs):
-        # # train / validate
-        # w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
-        # val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
-        # # tensorboard
-        # writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
-        # writer.add_scalar('train_loss',train_loss, epoch)
-        # writer.add_scalar('val_loss',val_loss, epoch)
-        # save model
+        # =========== train / validate ===========
+        w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
+        val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
+        # ============= tensorboard =============
+        writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
+        writer.add_scalar('train_loss',train_loss, epoch)
+        writer.add_scalar('val_loss',val_loss, epoch)
+        # ============== save model =============
         if epoch % args.savefreq == 0:
             checkpoint_state = {
                 "pfld": pfld.state_dict(),
@@ -82,14 +83,13 @@ def main():
             }
             torch.save(checkpoint_state, args.savepath)
             print(f'\tSaved checkpoint in {args.savepath}\n')
-
     writer.close()
 
 def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloader, epoch_idx):
 
     weighted_loss = 0
     loss = 0
-    batches_in_epoch = args.batch_size // 7500
+    batches_in_epoch = 7500 // args.batch_size  
     for batch, (image, labels) in enumerate(dataloader):
         print("*"*70,'\n')
         print(f'\tbatch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
@@ -124,7 +124,7 @@ def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch_idx):
     pfld_model.eval()
     auxiliary_model.eval()
 
-    batches_in_epoch = args.batch_size // 2500
+    batches_in_epoch = 2500 // args.batch_size
 
     with torch.no_grad():
         for batch, (image, labels) in enumerate(dataloader):
