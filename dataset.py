@@ -79,6 +79,7 @@ class WFLW_Dataset(Dataset):
             labels['landmarks'] = self.transform(labels['landmarks'])
             labels['attributes'] = self.transform(labels['attributes'].reshape(1,6))
             labels['euler_angles'] = self.transform(labels['euler_angles'].reshape(1,3))
+            labels['rect'] = self.transform(labels['rect'])
 
         return image, labels
 

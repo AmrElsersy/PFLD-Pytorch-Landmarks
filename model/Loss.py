@@ -24,7 +24,7 @@ class PFLD_L2Loss(nn.Module):
         # sum all 3 angles (by axis 1) for each batch example (mean on angles)
         # note torch.cos accepts only radians
         # angles_weight.shape (batch_size, 1)
-        print(angles, gt_angles)
+        # print(angles, gt_angles)
         angles_weight = torch.sum(1-torch.cos(torch.deg2rad(angles-gt_angles)), axis=1)
 
         # attributes weight .... v1
@@ -46,9 +46,9 @@ class PFLD_L2Loss(nn.Module):
         # shape (batch_size, 1) ... mean on both axes(1,2) to sum all x & all y seperatly them sum them
         landmarks_loss = torch.sum((landmarks-gt_landmarks)**2, (1,2))
 
-        print("angles_weight:", angles_weight)
-        print("attributes_weight", attributes_weight)
-        print("landmakrs loss", landmarks_loss)
+        # print("angles_weight:", angles_weight)
+        # print("attributes_weight", attributes_weight)
+        # print("landmakrs loss", landmarks_loss)
 
         # mean on batch size
         return torch.mean(attributes_weight * angles_weight * landmarks_loss) , torch.mean(landmarks_loss)

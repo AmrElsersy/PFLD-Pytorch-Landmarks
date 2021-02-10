@@ -6,7 +6,11 @@ Description: utils functions for Data Augumentation & euler utils
 """
 import cv2
 import numpy as np
+import torch
 from euler_angles import EulerAngles
+
+def to_numpy_image(tensor):
+    return np.transpose(tensor.numpy(), (1, 2, 0))
 
 # =========== Data Augumentation ===================
 def rotate(image, labels, angle):

@@ -35,7 +35,7 @@ class WFLW_Visualizer:
         rect = labels['rect'].astype(np.int32)
         landmarks = labels['landmarks'].astype(np.int32)
         euler_angles = labels['euler_angles']
-
+        
         image = self.draw_landmarks(image, rect, landmarks)
         image = self.draw_euler_angles_approximation(image, euler_angles)
         self.show(image)        
