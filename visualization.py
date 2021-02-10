@@ -32,11 +32,14 @@ class WFLW_Visualizer:
         self.user_press = None
 
     def visualize(self, image, labels):
-        rect = labels['rect'].astype(np.int32)
+        if 'rect' in labels:
+            rect = labels['rect'].astype(np.int32)
+            image = self.draw_rect(image, rect)
+
         landmarks = labels['landmarks'].astype(np.int32)
         euler_angles = labels['euler_angles']
         
-        image = self.draw_landmarks(image, rect, landmarks)
+        image = self.draw_landmarks(image, landmarks)
         image = self.draw_euler_angles_approximation(image, euler_angles)
         self.show(image)        
 
@@ -52,14 +55,16 @@ class WFLW_Visualizer:
         cv2.imshow(self.winname, image)
         self.user_press = cv2.waitKey(0) & 0xff
 
-    def draw_landmarks(self, image, rect, landmarks):
+    def draw_rect(self, image, rect):
         if self.mode == LoadMode.FULL_IMG:
             (x1,y1), (x2,y2) = rect
             cv2.rectangle(image, (x1,y1), (x2,y2), self.rect_color, self.rect_width)
+        return image
 
+    def draw_landmarks(self, image, landmarks):
+        # print(image.shape, landmarks.shape)
         for (x,y) in landmarks:
             cv2.circle(image, (x,y), self.landmarks_radius, self.landmarks_color, -1)
-
         return image                
 
     def batch_draw_landmarks(self, images, labels):

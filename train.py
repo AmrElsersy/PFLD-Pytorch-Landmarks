@@ -29,11 +29,11 @@ from utils import to_numpy_image
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=10, help='num of training epochs')
-    parser.add_argument('--batch_size', type=int, default=10, help="training batch size")
+    parser.add_argument('--epochs', type=int, default=300, help='num of training epochs')
+    parser.add_argument('--batch_size', type=int, default=20, help="training batch size")
     parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--logging', type=str, default='checkpoint/logging', help='path of logging')
-    parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-6, help='optimizer weight decay')
     parser.add_argument('--datapath', type=str, default='data/WFLW', help='root path of WFLW dataset')
     parser.add_argument('--pretrained', type=str,default='checkpoint/model_weights/weights.pth.tar',help='load checkpoint')
@@ -66,16 +66,19 @@ def main():
         pfld.load_state_dict(checkpoint["pfld"])
         auxiliarynet.load_state_dict(checkpoint["auxiliary"])
         print(f'\tLoaded checkpoint from {args.pretrained}\n')
-
+        time.sleep(1)
+    else:
+        print("******************* Start training from scratch *******************\n")
+        time.sleep(5)
     # ========================================================================
     for epoch in range(args.epochs):
-        # # =========== train / validate ===========
-        # w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
-        # val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
-        # # ============= tensorboard =============
-        # writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
-        # writer.add_scalar('train_loss',train_loss, epoch)
-        # writer.add_scalar('val_loss',val_loss, epoch)
+        # =========== train / validate ===========
+        w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
+        val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
+        # ============= tensorboard =============
+        writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
+        writer.add_scalar('train_loss',train_loss, epoch)
+        writer.add_scalar('val_loss',val_loss, epoch)
         # ============== save model =============
         if epoch % args.savefreq == 0:
             checkpoint_state = {
@@ -83,17 +86,17 @@ def main():
                 "auxiliary": auxiliarynet.state_dict()
             }
             torch.save(checkpoint_state, args.savepath)
-            print(f'\tSaved checkpoint in {args.savepath}\n')
+            print(f'\n\t*** Saved checkpoint in {args.savepath} ***\n')
+            time.sleep(2)
     writer.close()
 
-def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloader, epoch_idx):
-
+def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloader, epoch):
     weighted_loss = 0
     loss = 0
-    batches_in_epoch = 7500 // args.batch_size  
-    for batch, (image, labels) in enumerate(dataloader):
-        print("*"*70,f'\n\ttraining .. batch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
+    pfld_model.train()
+    auxiliary_model.train()
 
+    for image, labels in tqdm(dataloader):
         euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
         attributes = labels['attributes'].squeeze() # shape (batch, 6)
         landmarks = labels['landmarks'].squeeze() # shape (batch, 98, 2)
@@ -108,9 +111,11 @@ def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloade
  
         featrues, pred_landmarks = pfld_model(image)
         pred_angles = auxiliary_model(featrues)
-
         weighted_loss, loss = criterion(pred_landmarks, landmarks, pred_angles, euler_angles, attributes)
-        print("weighted_loss=",weighted_loss.item(), " ... loss=", loss.item())
+
+        train_w_loss = round(weighted_loss.item(),3)
+        train_loss = round(loss.item(),3)
+        print(f"\ttraining epoch={epoch} .. weighted_loss= {train_w_loss} ... loss={train_loss}")
 
         optimizer.zero_grad()
         weighted_loss.backward()
@@ -119,16 +124,13 @@ def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloade
     return weighted_loss.item(), loss.item()    
 
 
-def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch_idx):
+def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch):
     validation_losses = []
     pfld_model.eval()
     auxiliary_model.eval()
 
-    batches_in_epoch = 2500 // args.batch_size
-
     with torch.no_grad():
-        for batch, (image, labels) in enumerate(dataloader):
-            print("*"*70,f'\n\tvalidation .. batch {batch}/{batches_in_epoch}  epoch {epoch_idx}\n')
+        for image, labels in tqdm(dataloader):
 
             euler_angles = labels['euler_angles'].squeeze() # shape (batch, 3)
             attributes = labels['attributes'].squeeze() # shape (batch, 6)
@@ -144,13 +146,17 @@ def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch_idx):
 
             featrues, pred_landmarks = pfld_model(image)
             pred_angles = auxiliary_model(featrues)
-
             weighted_loss, loss = criterion(pred_landmarks, landmarks, pred_angles, euler_angles, attributes)
-            print("val_weighted_loss=",weighted_loss.item(), " ... val_loss=", loss.item())
-            validation_losses.append(loss.cpu().numpy())
 
-        avg_val_loss = np.mean(validation_losses).item()
-        print('Eval set: Average loss: {:.4f} '.format(avg_val_loss))
+            weighted_loss = round(weighted_loss.item(),3)
+            loss = round(loss.item(),3)
+            print(f"\tval epoch={epoch} .. val_weighted_loss= {weighted_loss} ... val_loss={loss}\n")
+            
+            validation_losses.append(loss)
+
+        avg_val_loss = round(np.mean(validation_losses).item(),3)
+               
+        print('*'*70,f'\n\tEvaluation average loss= {avg_val_loss}\n')
         return avg_val_loss
 
 
