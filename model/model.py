@@ -148,10 +148,10 @@ class AuxiliaryNet(nn.Module):
         return x
 
 if __name__ == "__main__":
-    auxiliary = AuxiliaryNet()
-    pfld = PFLD()
+    auxiliary = AuxiliaryNet().to(device)
+    pfld = PFLD().to(device)
 
-    x = torch.randn((10, 3,112,112))
+    x = torch.randn((10, 3,112,112)).to(device)
     print("x shape:",x.shape)
     features, landmarks = pfld(x)
     print("features:",features.shape)

@@ -157,6 +157,7 @@ def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch):
         avg_val_loss = round(np.mean(validation_losses).item(),3)
                
         print('*'*70,f'\n\tEvaluation average loss= {avg_val_loss}\n')
+        time.sleep(1)
         return avg_val_loss
 
 
