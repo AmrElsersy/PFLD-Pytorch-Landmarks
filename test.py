@@ -42,7 +42,7 @@ args = parse_args()
 
 def main():
     # ========= dataset ===========
-    dataset = WFLW_Dataset(root=args.datapath, mode='val', transform=True)
+    dataset = WFLW_Dataset(root=args.datapath, mode='train', transform=True)
     visualizer = WFLW_Visualizer()
     # =========== models ============= 
     pfld = PFLD().to(device)
@@ -67,14 +67,20 @@ def main():
 
             pfld = pfld.to(device)
             auxiliarynet = auxiliarynet.to(device)
+            t1 = time.time()
             featrues, pred_landmarks = pfld(image)
+            t2 = time.time()
             pred_angles = auxiliarynet(featrues)
-
+            t3 = time.time()
+            print(f"\ttime PFLD landmarks= {round((t2-t1)*1000,3)} ms")
+            print(f"\ttime auxiliary euler= {round((t3-t2)*1000,3)} ms")
+            print(f"\ttotal time= {round((t3-t1)*1000,3)} ms\n")
+            
             pred_landmarks = pred_landmarks.cpu().reshape(98,2).numpy()
             image = to_numpy_image(image[0].cpu())
 
-            print("*"*80,"\npredicted:",pred_landmarks)
-            print("*"*80,"\labels:",landmarks)
+            # print("*"*80,"\npredicted:",pred_landmarks)
+            # print("*"*80,"\labels:",landmarks)
 
             pred_landmarks = (pred_landmarks*112).astype(np.int32) 
 
@@ -87,10 +93,9 @@ def main():
             img2[:,:] = 0
 
             img = visualizer.draw_landmarks(img, pred_landmarks)
+            img2 = visualizer.draw_landmarks(img2, pred_landmarks)
+            visualizer.show(img2, wait=False, winname="black")
             visualizer.show(img)
-
-            # img2 = visualizer.draw_landmarks(img2, pred_landmarks)
-            # visualizer.show(img2)
             print('*'*70,'\n')
 
             if visualizer.user_press == 27:
@@ -141,5 +146,5 @@ def overfit_one_mini_batch():
 
 
 if __name__ == "__main__":
-    # main()
-    overfit_one_mini_batch()
+    main()
+    # overfit_one_mini_batch()

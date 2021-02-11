@@ -23,7 +23,7 @@ class WFLW_Visualizer:
         self.writer = tensorboard.SummaryWriter("checkpoint/tensorboard")
 
         self.rect_color = (0,255,255)
-        self.landmarks_color  = (0,255,0)
+        self.landmarks_color  = (0,0,255)
         self.rect_width = 3
         self.landmarks_radius = 1
         self.winname = "image"
@@ -43,7 +43,7 @@ class WFLW_Visualizer:
         image = self.draw_euler_angles_approximation(image, euler_angles)
         self.show(image)        
 
-    def show(self, image, size = None):
+    def show(self, image, size = None, wait = True, winname="image"):
         if size:
             image = cv2.resize(image, size)
         else:
@@ -52,8 +52,9 @@ class WFLW_Visualizer:
             elif self.mode == LoadMode.FACE_ONLY:
                 image = cv2.resize(image, self.crop_resize_shape)
 
-        cv2.imshow(self.winname, image)
-        self.user_press = cv2.waitKey(0) & 0xff
+        cv2.imshow(winname, image)
+        if wait:
+            self.user_press = cv2.waitKey(0) & 0xff
 
     def draw_rect(self, image, rect):
         if self.mode == LoadMode.FULL_IMG:

@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=20, help="training batch size")
     parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--logging', type=str, default='checkpoint/logging', help='path of logging')
-    parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.00005, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-6, help='optimizer weight decay')
     parser.add_argument('--datapath', type=str, default='data/WFLW', help='root path of WFLW dataset')
     parser.add_argument('--pretrained', type=str,default='checkpoint/model_weights/weights.pth.tar',help='load checkpoint')
@@ -57,9 +57,6 @@ def main():
     pfld = PFLD().to(device)
     auxiliarynet = AuxiliaryNet().to(device)
     loss = PFLD_L2Loss().to(device)
-    # =========== optimizer =========== 
-    parameters = list(pfld.parameters()) + list(auxiliarynet.parameters())
-    optimizer = torch.optim.Adam(parameters, lr=args.lr, weight_decay=args.weight_decay)
     # ========= load weights ===========
     if args.resume:
         checkpoint = torch.load(args.pretrained)
@@ -70,6 +67,9 @@ def main():
     else:
         print("******************* Start training from scratch *******************\n")
         time.sleep(5)
+    # =========== optimizer =========== 
+    parameters = list(pfld.parameters()) + list(auxiliarynet.parameters())
+    optimizer = torch.optim.Adam(parameters, lr=args.lr, weight_decay=args.weight_decay)
     # ========================================================================
     for epoch in range(args.epochs):
         # =========== train / validate ===========
