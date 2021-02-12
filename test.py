@@ -49,7 +49,7 @@ def main():
     auxiliarynet = AuxiliaryNet().to(device)
     # ========= load weights ===========
     checkpoint = torch.load(args.pretrained)
-    pfld.load_state_dict(checkpoint["pfld"])
+    pfld.load_state_dict(checkpoint["pfld"], strict=False)
     auxiliarynet.load_state_dict(checkpoint["auxiliary"])
     print(f'\n\tLoaded checkpoint from {args.pretrained}\n')
     time.sleep(1)
@@ -143,8 +143,24 @@ def overfit_one_mini_batch():
         weighted_loss.backward()
         optimizer.step()
 
+def show_model_tensorboard():
+    import torch.utils.tensorboard as tensorboard
 
+    pfld = PFLD()
+    auxiliarynet = AuxiliaryNet()
+
+    dataloader = create_test_loader(batch_size=20, transform=True)
+    dataitr = iter(dataloader)
+    image, labels = dataitr.next()
+    print("ray2")
+    writer = tensorboard.SummaryWriter("checkpoint/ray22")
+    writer.add_graph(pfld, image)
+    print("added model to tensorboard")
+    time.sleep(4)
+    writer.close()
+    
 
 if __name__ == "__main__":
     main()
     # overfit_one_mini_batch()
+    # show_model_tensorboard()

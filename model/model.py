@@ -17,14 +17,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def ConvBlock(in_channels, out_channels, kernel_size=3, stride=1, padding=0):
     return nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
+        nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
         nn.BatchNorm2d(out_channels),
         nn.ReLU(inplace=True)
     )
 
 class PFLD(nn.Module):
-    def __init__(self):
+    def __init__(self, device_cpu = False):
         super(PFLD, self).__init__()
+        self.device = torch.device('cpu') if device_cpu else device
+
         self.conv = ConvBlock(in_channels=3, out_channels=64, stride=2, padding=1)
         self.depth_wise_conv = DepthSepConvBlock(in_channels=64, out_channels=64).to(device)
         

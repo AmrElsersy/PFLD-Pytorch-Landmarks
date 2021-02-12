@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=20, help="training batch size")
     parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--logging', type=str, default='checkpoint/logging', help='path of logging')
-    parser.add_argument('--lr', type=float, default=0.00005, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-6, help='optimizer weight decay')
     parser.add_argument('--datapath', type=str, default='data/WFLW', help='root path of WFLW dataset')
     parser.add_argument('--pretrained', type=str,default='checkpoint/model_weights/weights.pth.tar',help='load checkpoint')
@@ -53,6 +53,7 @@ def main():
     # ========= dataloaders ===========
     train_dataloader = create_train_loader(root=args.datapath,batch_size=args.batch_size, transform=True)
     test_dataloader  = create_test_loader(root=args.datapath, batch_size=args.batch_size, transform=True)    
+    start_epoch = 0
     # ======== models & loss ========== 
     pfld = PFLD().to(device)
     auxiliarynet = AuxiliaryNet().to(device)
@@ -60,8 +61,9 @@ def main():
     # ========= load weights ===========
     if args.resume:
         checkpoint = torch.load(args.pretrained)
-        pfld.load_state_dict(checkpoint["pfld"])
+        pfld.load_state_dict(checkpoint["pfld"], strict=False)
         auxiliarynet.load_state_dict(checkpoint["auxiliary"])
+        start_epoch = checkpoint['epoch']
         print(f'\tLoaded checkpoint from {args.pretrained}\n')
         time.sleep(1)
     else:
@@ -71,7 +73,7 @@ def main():
     parameters = list(pfld.parameters()) + list(auxiliarynet.parameters())
     optimizer = torch.optim.Adam(parameters, lr=args.lr, weight_decay=args.weight_decay)
     # ========================================================================
-    for epoch in range(args.epochs):
+    for epoch in range(start_epoch, args.epochs):
         # =========== train / validate ===========
         w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
         val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
@@ -83,7 +85,8 @@ def main():
         if epoch % args.savefreq == 0:
             checkpoint_state = {
                 "pfld": pfld.state_dict(),
-                "auxiliary": auxiliarynet.state_dict()
+                "auxiliary": auxiliarynet.state_dict(),
+                "epoch": epoch
             }
             torch.save(checkpoint_state, args.savepath)
             print(f'\n\t*** Saved checkpoint in {args.savepath} ***\n')
