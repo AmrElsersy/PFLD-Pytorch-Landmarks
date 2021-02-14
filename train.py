@@ -26,10 +26,15 @@ from model.DepthSepConv import DepthSepConvBlock
 from model.BottleneckResidual import BottleneckResidualBlock
 
 from utils import to_numpy_image
+import torch.backends.cudnn as cudnn
+
+cudnn.benchmark = True
+cudnn.determinstic = True
+cudnn.enabled = True
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=300, help='num of training epochs')
+    parser.add_argument('--epochs', type=int, default=600, help='num of training epochs')
     parser.add_argument('--batch_size', type=int, default=20, help="training batch size")
     parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--logging', type=str, default='checkpoint/logging', help='path of logging')
@@ -40,14 +45,23 @@ def parse_args():
     parser.add_argument('--resume', action='store_true', help='resume from pretrained path specified in prev arg')
     parser.add_argument('--savepath', type=str, default='checkpoint/model_weights/weights.pth.tar', help='save checkpoint')    
     parser.add_argument('--savefreq', type=int, default=2, help="save weights each freq num of epochs")
+    parser.add_argument('--logdir', type=str, default='checkpoint/logging', help='logging')    
     args = parser.parse_args()
     return args
-
 # ======================================================================
 
+# device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# args
 args = parse_args()
+# logging
+logging.basicConfig(
+format='[%(asctime)s] [p%(process)s] [%(pathname)s:%(lineno)d] [%(levelname)s] %(message)s',
+level=logging.INFO,
+handlers=[logging.FileHandler(args.logdir, mode='w'), logging.StreamHandler()])
+# tensorboard
 writer = tensorboard.SummaryWriter(args.tensorboard)
+
 
 def main():
     # ========= dataloaders ===========
@@ -65,6 +79,7 @@ def main():
         auxiliarynet.load_state_dict(checkpoint["auxiliary"])
         start_epoch = checkpoint['epoch']
         print(f'\tLoaded checkpoint from {args.pretrained}\n')
+        logging.info(f'\tLoaded checkpoint from {args.pretrained}\n')
         time.sleep(1)
     else:
         print("******************* Start training from scratch *******************\n")
@@ -90,6 +105,7 @@ def main():
             }
             torch.save(checkpoint_state, args.savepath)
             print(f'\n\t*** Saved checkpoint in {args.savepath} ***\n')
+            logging.info(f'\n\t*** Saved checkpoint in {args.savepath} ***\n')
             time.sleep(2)
     writer.close()
 
@@ -119,6 +135,7 @@ def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloade
         train_w_loss = round(weighted_loss.item(),3)
         train_loss = round(loss.item(),3)
         print(f"\ttraining epoch={epoch} .. weighted_loss= {train_w_loss} ... loss={train_loss}")
+        logging.info(f"\ttraining epoch={epoch} .. weighted_loss= {train_w_loss} ... loss={train_loss}")
 
         optimizer.zero_grad()
         weighted_loss.backward()
@@ -154,12 +171,14 @@ def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch):
             weighted_loss = round(weighted_loss.item(),3)
             loss = round(loss.item(),3)
             print(f"\tval epoch={epoch} .. val_weighted_loss= {weighted_loss} ... val_loss={loss}\n")
+            logging.info(f"\tval epoch={epoch} .. val_weighted_loss= {weighted_loss} ... val_loss={loss}\n")
             
             validation_losses.append(loss)
 
         avg_val_loss = round(np.mean(validation_losses).item(),3)
                
         print('*'*70,f'\n\tEvaluation average loss= {avg_val_loss}\n')
+        logging.info('*'*70 + f'\n\tEvaluation average loss= {avg_val_loss}\n')
         time.sleep(1)
         return avg_val_loss
 

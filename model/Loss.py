@@ -41,14 +41,15 @@ class PFLD_L2Loss(nn.Module):
         # if we don't get the max .. all attributes =0 so weight will be 0 even if there is an error in
         # landmarks & angle, so we add a hing 1 to that weight to limit that .. same for angles
         attributes_weight += 1
-        # angles_weight += 1
+        angles_weight += 1
 
         # L2 Landmarks Loss
         # shape (batch_size, 1) ... mean on both axes(1,2) to sum all x & all y seperatly them sum them
         landmarks_loss = torch.sum((landmarks-gt_landmarks)**2, 1)
 
         # print("landmakrs loss", landmarks_loss)
-        # print(f"\nangles_weight: {angles_weight} ... \nattributes_weight: {attributes_weight}")
+        # print(f"\nangles_weight: {angles_weight}") 
+        # print(f"\nattributes_weight: {attributes_weight}")
         # mean on batch size
         return torch.mean(attributes_weight * angles_weight * landmarks_loss) , torch.mean(landmarks_loss)
 

@@ -14,12 +14,8 @@ import torchvision.transforms.transforms as transforms
 import numpy as np 
 import cv2
 
-class LoadMode(enum.Enum):
-    FACE_ONLY = 0
-    FULL_IMG = 1
-
 class WFLW_Dataset(Dataset):
-    def __init__(self, root='data/WFLW', mode='train', load_mode = LoadMode.FACE_ONLY, transform=False):
+    def __init__(self, root='data/WFLW', mode='train', transform=False):
         self.root = root
         self.transform = transforms.ToTensor() if transform else None
 
@@ -27,7 +23,6 @@ class WFLW_Dataset(Dataset):
         self.face_shape = (112,112)
 
         self.mode = mode 
-        self.load_mode = load_mode
         assert mode in ['train', 'val']
 
         self.annotations_root = os.path.join(self.root, "WFLW_annotations")
@@ -47,31 +42,48 @@ class WFLW_Dataset(Dataset):
         image = self.read_image(labels['image_name'])
 
         # clip the image rect and translate the landmarks coordinates
-        if self.load_mode == LoadMode.FACE_ONLY:
-            rect = labels['rect']
-            landmarks = labels['landmarks']
+        rect = labels['rect']
+        landmarks = labels['landmarks']
 
-            # crop face
-            (x1, y1), (x2, y2) = rect            
-            image = image[int(y1):int(y2), int(x1):int(x2)]
+        (x1, y1), (x2, y2) = rect            
+        # print(x1,x2, y1,y2, image.shape)
 
-            # resize the image & store the dims to resize landmarks
-            h, w = image.shape[:2]
-            image = cv2.resize(image, self.face_shape)
-            new_h, new_w = self.face_shape
+        # ========  get a bigger rect ======== 
+        # rect_dw = (x2 - x1) *.2
+        # rect_dy = (y2 - y1) *.2
+        # x1 -= rect_dw/2
+        # x2 += rect_dw/2
+        # y1 -= rect_dy/2
+        # y2 += rect_dy/2
+        # x1 = max(x1, 0)
+        # x2 = max(x2, 0)
+        # y1 = max(y1, 0)
+        # y2 = max(y2, 0)
+        # rect[0] = (x1,y1)
+        # rect[1] = (x2,y2)
 
-            # scale factor in x & y to scale the landmarks
-            fx = new_w / w
-            fy = new_h / h
-            # translate the landmarks then scale them
-            landmarks -= rect[0]
-            for landmark in landmarks:
-                landmark[0] *= fx
-                landmark[1] *= fy
 
-            # face rect
-            rect[0] = (0,0)
-            rect[1] = (x2-x1, y2-y1)
+        # print("RRR:", rect_dw, rect_dy)
+        image = image[int(y1):int(y2), int(x1):int(x2)]
+
+        # resize the image & store the dims to resize landmarks
+        h, w = image.shape[:2]
+        # print(x1,x2, y1,y2, image.shape)
+        image = cv2.resize(image, self.face_shape)
+        new_h, new_w = self.face_shape
+
+        # scale factor in x & y to scale the landmarks
+        fx = new_w / w
+        fy = new_h / h
+        # translate the landmarks then scale them
+        landmarks -= rect[0]
+        for landmark in landmarks:
+            landmark[0] *= fx
+            landmark[1] *= fy
+
+        # face rect
+        rect[0] = (0,0)
+        rect[1] = (x2-x1, y2-y1)
 
         if self.transform:
             # convert to torch Tensor
@@ -143,13 +155,13 @@ class WFLW_Dataset(Dataset):
 
 
 
-def create_train_loader(root='data/WFLW', batch_size = 64, mode = LoadMode.FACE_ONLY, transform=False):
-    dataset = WFLW_Dataset(root, mode='train', load_mode=mode, transform=transform)
+def create_train_loader(root='data/WFLW', batch_size = 64, transform=False):
+    dataset = WFLW_Dataset(root, mode='train', transform=transform)
     dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
     return dataloader
 
-def create_test_loader(root='data/WFLW', batch_size = 1, mode = LoadMode.FACE_ONLY, transform=False):
-    dataset = WFLW_Dataset(root, mode='val', load_mode=mode, transform=transform)
+def create_test_loader(root='data/WFLW', batch_size = 1, transform=False):
+    dataset = WFLW_Dataset(root, mode='val', transform=transform)
     dataloader = DataLoader(dataset, shuffle=False, batch_size=batch_size)
     return dataloader
 

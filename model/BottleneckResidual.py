@@ -25,7 +25,8 @@ class BottleneckResidualBlock(nn.Module):
         expand_channels = in_channels * expand_factor
         self.expantion_pointwise_conv = nn.Conv2d(in_channels, expand_channels, kernel_size=1, stride=1, bias=False)
         self.bn1 = nn.BatchNorm2d(expand_channels)
-        self.relu = nn.ReLU6()
+        # ============================= we modified it from ReLU6 to normal ReLU ===================
+        self.relu = nn.ReLU()
 
         # Depth wise 3x3 Conv 
         self.depth_wise_conv = nn.Conv2d(expand_channels, expand_channels, kernel_size=3, stride=stride, 

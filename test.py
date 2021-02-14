@@ -27,6 +27,12 @@ from model.DepthSepConv import DepthSepConvBlock
 from model.BottleneckResidual import BottleneckResidualBlock
 
 from utils import to_numpy_image
+import torch.backends.cudnn as cudnn
+
+cudnn.benchmark = True
+cudnn.determinstic = True
+cudnn.enabled = True
+
 
 def parse_args():
     parser = argparse.ArgumentParser()

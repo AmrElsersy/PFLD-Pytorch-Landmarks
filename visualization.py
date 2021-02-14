@@ -23,12 +23,12 @@ class WFLW_Visualizer:
         self.writer = tensorboard.SummaryWriter("checkpoint/tensorboard")
 
         self.rect_color = (0,255,255)
-        self.landmarks_color  = (0,0,255)
+        self.landmarks_color  = (255,0,0)
         self.rect_width = 3
         self.landmarks_radius = 1
         self.winname = "image"
         self.full_resize_shape = (1000, 900)
-        self.crop_resize_shape = (300, 400)
+        self.crop_resize_shape = (400, 400)
         self.user_press = None
 
     def visualize(self, image, labels):
