@@ -2,7 +2,7 @@
 Author: Amr Elsersy
 email: amrelsersay@gmail.com
 -----------------------------------------------------------------------------------
-Description: 
+Description: Dataset Augumentation & Generation
 """
 
 import os, time, enum
@@ -14,117 +14,15 @@ import numpy as np
 import cv2
 from euler_angles import EulerAngles
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-    return args
-
-def rotatedRectWithMaxArea(side, angle):
-    """
-    Given a square image of size side x side that has been rotated by 'angle' 
-    (in degree), computes the new side of the largest possible
-    axis-aligned square (maximal area) within the rotated image.
-    """
-    # convert to radians
-    angle = angle * math.pi/180
-    # since the solutions for angle, -angle and 180-angle are all the same,
-    # if suffices to look at the first quadrant and the absolute values of sin,cos:
-    sin_a, cos_a = abs(math.sin(angle)), abs(math.cos(angle))
-
-    if side <= 2.*sin_a*cos_a*side or abs(sin_a-cos_a) < 1e-10:
-        # half constrained case: two crop corners touch the longer side,
-        #   the other two corners are on the mid-line parallel to the longer line
-        x = 0.5*side
-        new_side = x/sin_a,x/cos_a
-    else:
-        # fully constrained case: crop touches all 4 sides
-        cos_2a = cos_a*cos_a - sin_a*sin_a
-        new_side = side*(cos_a -sin_a)/cos_2a
-
-    return int(new_side)
-
-def rotate(image, landmarks, theta):
-
-    # rotation center = image center
-    w,h = image.shape[:2]
-    center = (w//2, h//2)
-    # get translation-rotation matrix numpy array shape (2,3) has rotation and last column is translation
-    # note that it translate the coord to the origin apply the rotation then translate it again to cente
-    rotation_matrix = cv2.getRotationMatrix2D(center, theta, 1)
-    # print("rotation_matrix",rotation_matrix, type(rotation_matrix), rotation_matrix.shape)
-    image = cv2.warpAffine(image, rotation_matrix, (130,130))
-
-    # add homoginous 1 to 2D landmarks to be able to use the same translation-rotation matrix
-    landmarks =np.hstack((landmarks, np.ones((98, 1))))
-    landmarks = (rotation_matrix @ landmarks.T).T
-
-    # # print(landmarks.shape)
-    side = w # can be h also as w = h
-    new_side = rotatedRectWithMaxArea(side, theta)
-    # print(f"new w,h =({new_side}, {new_side})")
-    # print(f"center ={center}")
-    top_left = (center[0] - new_side//2, center[1] - new_side//2)
-    bottom_right = (center[0] + new_side//2, center[1] + new_side//2)
-    # print('top_left',top_left)
-    # print('botton_right:', bottom_right)
-
-    image = image[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
-    print(image.shape)
-
-    landmarks -= top_left 
-
-    image, landmarks = resize(image, landmarks)
-
-    for point in landmarks:
-        point = (int(point[0]), int(point[1]))
-        cv2.circle(image, point, 0, (0,0,255), -1)
-    # image = cv2.resize(image, (300,300))
-    cv2.imshow("image"+str(theta), image)
-    cv2.waitKey(0)
-
-    return image, landmarks
-
-
-def flip(image, landmarks):
-    # horizontal flip
-    image = cv2.flip(image, 1)
-
-    w,h = image.shape[:2]
-    center = (w//2, h//2)
-
-    # translate it to origin
-    landmarks -= center 
-    # apply reflection(flip) matrix
-    flip_matrix = np.array([
-        [-1, 0],
-        [0 , 1]
-    ])   
-    landmarks = (flip_matrix @ landmarks.T).T
-    # translate again to its position
-    landmarks += center
-
-    return image, landmarks
-
-def resize(image, landmarks, size=(112,112)):
-    side = image.shape[0]    
-    scale = size[0] / side
-    image = cv2.resize(image, size)
-    landmarks *= scale
-    return image, landmarks
-
-
-from dataset import WFLW_Dataset
-dataset = WFLW_Dataset()
-image, labels = dataset[0]
-landmarks = labels['landmarks']
-
-# rotate(None, None, 30)
-# rotate(None, None, 15)
-# image, landmarks = flip(image, landmarks)
-rotate(image, landmarks,30)
-exit(0)
+# ============= Data Augumentation =============
+from utils import rotate, flip, resize, rotatedRectWithMaxArea
 
 class Data_Augumentor:
+    """
+        Data Augumentation
+        - reads original dataset annotations and preprocess data & augument it
+        - generates new & clean dataset ready to be used.
+    """
     def __init__(self):
         self.face_shape = (112,112)
         self.theta1 = 15
@@ -134,15 +32,6 @@ class Data_Augumentor:
         self.root = 'data'
         self.train_path = os.path.join(self.root, 'train')
         self.test_path = os.path.join(self.root, 'test')
-        try:
-            os.mkdir(self.train_path)
-            os.mkdir(self.test_path)
-            os.mkdir(os.path.join(self.train_path, 'images'))
-            os.mkdir(os.path.join(self.test_path, 'images'))           
-            print('folders are created')
-        except:
-            print("train/test folders already exist")
-            exit(0)
 
         self.images_root = os.path.join(self.root, 'WFLW', "WFLW_images")
         train_test_root = os.path.join(self.root, 'WFLW', "WFLW_annotations", "list_98pt_rect_attr_train_test")
@@ -172,6 +61,18 @@ class Data_Augumentor:
 
     def generate_dataset(self, mode='train'):
         assert mode in ['train', 'test']
+        try:
+            if mode == 'train':
+                os.mkdir(self.train_path)
+                os.mkdir(os.path.join(self.train_path, 'images'))
+            else:
+                os.mkdir(self.test_path)
+                os.mkdir(os.path.join(self.test_path, 'images'))           
+            print(f'created data/{mode} folder')
+        except:
+            print(f"{mode} folder already exist")
+            return
+
         lines = self.train_lines if mode == 'train' else self.test_lines
         save_path = self.train_path if mode == 'train' else self.test_path
 
@@ -187,30 +88,46 @@ class Data_Augumentor:
             rect = annotations['rect']
             landmarks = annotations['landmarks']
             attributes = annotations['attributes']
-            
-            # crop face & resize to a bigger rect
-            scaled_rect = self.scale_rect(rect, 0.2)
-            # original_image, _, original_landmarks = self.crop_face(image, rect, landmarks)
-            image, rect, landmarks = self.crop_face(image, scaled_rect, landmarks)
-            
-            # Data Augumentation
+                        
+            # ============= Data Augumentation =================
+            """
+                8x dataset
+                    original image + flip image
+                    4 rotated image
+                    2 rotated flip image
+            """
             all_images = []
             all_landmarks = []
 
             if mode == 'test':
+                image, rect, landmarks = self.crop_face(image, rect, landmarks)
                 all_images = [image]
                 all_landmarks = [landmarks]
             else:
-                rotated_image1, rotated_landmarks1 = rotate(image, landmarks, self.theta1)
-                rotated_image2, rotated_landmarks2 = rotate(image, landmarks, self.theta2)
-                inverse_rotated_image1, inverse_rotated_landmarks1 = rotate(image, landmarks, -self.theta1)
-                inverse_rotated_image2, inverse_rotated_landmarks2 = rotate(image, landmarks, -self.theta2)
-                flip_image, flip_landmarks = flip(image, landmarks)
+                original_image, _, original_landmarks = self.crop_face(np.copy(image), np.copy(rect), np.copy(landmarks))
+                flip_original_image, flip_original_landmarks = flip(original_image, original_landmarks)
 
-                all_images = [image, flip_image, rotated_image1, rotated_image2, 
-                            inverse_rotated_image1, inverse_rotated_image2]
-                all_landmarks = [landmarks, flip_landmarks, rotated_landmarks1, rotated_landmarks2, 
-                                inverse_rotated_landmarks1, inverse_rotated_landmarks2]
+                # crop face & resize to a bigger rect
+                scaled_rect = self.scale_rect(rect, 0.25)
+                image, rect, landmarks = self.crop_face(np.copy(image), scaled_rect, np.copy(landmarks))
+                flip_image, flip_landmarks = flip(np.copy(image), np.copy(landmarks))
+                
+                augumentation_angles = [30, -30, 15, -15]
+                for angle in augumentation_angles:
+                    rotated_image, rotated_landmarks = rotate(image, landmarks, angle)
+                    all_images.append(rotated_image)
+                    all_landmarks.append(rotated_landmarks)
+
+                augumentation_angles_flip = [20, -20]
+                for angle in augumentation_angles_flip:
+                    rotated_image, rotated_landmarks = rotate(flip_image, flip_landmarks, angle)
+                    all_images.append(rotated_image)
+                    all_landmarks.append(rotated_landmarks)
+
+                all_images.append(original_image)
+                all_images.append(flip_original_image)
+                all_landmarks.append(original_landmarks)
+                all_landmarks.append(flip_original_landmarks)
 
             # for every augumented image
             for i, img in enumerate(all_images):
@@ -238,9 +155,9 @@ class Data_Augumentor:
             k += 1
             if k % 100 == 0:
                 print(f'{mode} dataset: {k} generated data')
-        one_annotation_str = '\n'.join([annotation for annotation in all_annotations_str])
-        print(all_annotations_str)
+
         # ========= Save annotations ===============
+        one_annotation_str = '\n'.join([annotation for annotation in all_annotations_str])
         annotations_path = os.path.join(save_path, 'annotations.txt')
         annotations_file = open(annotations_path, 'w')
         annotations_file.write(one_annotation_str)
@@ -309,9 +226,12 @@ class Data_Augumentor:
 
 
 def main():
-    args = parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train')
+    args = parser.parse_args()
+
     augumentor = Data_Augumentor()
-    augumentor.generate_dataset(mode='test')
+    augumentor.generate_dataset(args.mode)
     
 if __name__ == "__main__":
     main()
