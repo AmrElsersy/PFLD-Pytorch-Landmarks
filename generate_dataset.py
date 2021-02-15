@@ -9,7 +9,7 @@ import os, time, enum
 from PIL import Image
 import argparse
 from numpy.lib.type_check import imag
-import torch
+import math
 import numpy as np 
 import cv2
 from euler_angles import EulerAngles
@@ -18,6 +18,31 @@ def parse_args():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     return args
+
+
+def rotatedRectWithMaxArea(side, angle):
+    """
+    Given a rectangle of size wxh that has been rotated by 'angle' (in
+    radians), computes the width and height of the largest possible
+    axis-aligned rectangle (maximal area) within the rotated rectangle.
+    """
+    # convert to radians
+    angle = angle * math.pi/180
+    # since the solutions for angle, -angle and 180-angle are all the same,
+    # if suffices to look at the first quadrant and the absolute values of sin,cos:
+    sin_a, cos_a = abs(math.sin(angle)), abs(math.cos(angle))
+
+    if side <= 2.*sin_a*cos_a*side or abs(sin_a-cos_a) < 1e-10:
+        # half constrained case: two crop corners touch the longer side,
+        #   the other two corners are on the mid-line parallel to the longer line
+        x = 0.5*side
+        new_side = x/sin_a,x/cos_a
+    else:
+        # fully constrained case: crop touches all 4 sides
+        cos_2a = cos_a*cos_a - sin_a*sin_a
+        new_side = side*(cos_a -sin_a)/cos_2a
+
+    return int(new_side)
 
 def rotate(image, landmarks, theta):
 
@@ -28,20 +53,23 @@ def rotate(image, landmarks, theta):
     # note that it translate the coord to the origin apply the rotation then translate it again to cente
     rotation_matrix = cv2.getRotationMatrix2D(center, theta, 1)
     # print("rotation_matrix",rotation_matrix, type(rotation_matrix), rotation_matrix.shape)
-    image = cv2.warpAffine(image, rotation_matrix, (h,w))
+    image = cv2.warpAffine(image, rotation_matrix, (130,130))
 
     # add homoginous 1 to 2D landmarks to be able to use the same translation-rotation matrix
     landmarks =np.hstack((landmarks, np.ones((98, 1))))
     landmarks = (rotation_matrix @ landmarks.T).T
 
-    # print(landmarks.shape)
+    # # print(landmarks.shape)
     # for point in landmarks:
     #     point = (int(point[0]), int(point[1]))
     #     cv2.circle(image, point, 0, (0,0,255), -1)
-
-    # image = cv2.resize(image, (300,400))
-    # cv2.imshow("image"+str(theta), image)
-    # cv2.waitKey(0)
+    side = w # can be h also as w = h
+    new_side = rotatedRectWithMaxArea(side, theta)
+    print(f"new w,h =({new_side}, {new_side})")
+    image = image[center[1]-new_side//2:center[1]+new_side//2,  center[0]-new_side//2:center[0]+new_side//2 ]
+    image = cv2.resize(image, (300,400))
+    cv2.imshow("image"+str(theta), image)
+    cv2.waitKey(0)
 
     return image, landmarks
 
@@ -77,7 +105,7 @@ landmarks = labels['landmarks']
 
 # rotate(None, None, 30)
 # rotate(None, None, 15)
-image, landmarks = flip(image, landmarks)
+# image, landmarks = flip(image, landmarks)
 rotate(image, landmarks,30)
 exit(0)
 
