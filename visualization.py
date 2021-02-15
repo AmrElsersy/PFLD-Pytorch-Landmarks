@@ -150,6 +150,7 @@ if __name__ == "__main__":
         dataset = WFLW_Dataset(mode=args.mode)
         for i in range(len(dataset)):
             image, labels = dataset[i]
+            print('landmarks', labels['landmarks'])
 
             print ("*" * 80, '\n\n\t press n for next example .... ESC to exit')
             print('\tcurrent image: ',labels['image_name'])

@@ -39,6 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--datapath', type=str, default='data', help='root path of augumented WFLW dataset')
     parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth.tar',help='load weights')
+    parser.add_argument('--mode', type=str, default='test', choices=['train', 'test'])
     args = parser.parse_args()
     return args
 
@@ -49,7 +50,7 @@ args = parse_args()
 
 def main():
     # ========= dataset ===========
-    dataset = WFLW_Dataset(root=args.datapath, mode='test', transform=transforms.ToTensor())
+    dataset = WFLW_Dataset(root=args.datapath, mode=args.mode, transform=transforms.ToTensor())
     visualizer = WFLW_Visualizer()
     # =========== models ============= 
     pfld = PFLD().to(device)
@@ -78,6 +79,9 @@ def main():
             featrues, pred_landmarks = pfld(image)
             t2 = time.time()
             pred_angles = auxiliarynet(featrues)
+            print('pred_angles',pred_angles)
+            print('gt_angles',labels['euler_angles'])
+            
             t3 = time.time()
             print(f"\ttime PFLD landmarks= {round((t2-t1)*1000,3)} ms")
             print(f"\ttime auxiliary euler= {round((t3-t2)*1000,3)} ms")
@@ -89,7 +93,7 @@ def main():
             # print("*"*80,"\npredicted:",pred_landmarks)
             # print("*"*80,"\labels:",landmarks)
 
-            pred_landmarks = (pred_landmarks*112).astype(np.int32) 
+            pred_landmarks = (pred_landmarks*100).astype(np.int32) 
 
             image = (image*255).astype(np.uint8)
             image = np.clip(image, 0, 255)
@@ -111,7 +115,7 @@ def main():
 def overfit_one_mini_batch():
 
     # ========= dataset ===========
-    dataloader = create_test_loader(batch_size=20, transform=True)
+    dataloader = create_test_loader(batch_size=20)
     # =========== models ============= 
     pfld_model = PFLD().to(device)
     auxiliary_model = AuxiliaryNet().to(device)

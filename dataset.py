@@ -35,10 +35,16 @@ class WFLW_Dataset(Dataset):
 
         if self.transform:
             # to tensor
+            # temp = np.copy(image)
+            # temp = self.transform(temp)
             image = self.transform(image)
+            # print('image after', image, '\n\n')
+            # print('temp after', temp, '\n\n')
 
             # Noramlization Landmarks
             labels['landmarks'] = self.transform(labels['landmarks']) / 112
+            # print(labels['landmarks'])
+
             # to tensor
             labels['attributes'] = self.transform(labels['attributes'].reshape(1,6))
             labels['euler_angles'] = self.transform(labels['euler_angles'].reshape(1,3))
@@ -102,16 +108,17 @@ if __name__ == "__main__":
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
     args = parser.parse_args()
 
-    dataset = WFLW_Dataset(mode=args.mode)
-    # for i in range(len(dataset)):
-    #     image, labels = dataset[i]
+    dataset = WFLW_Dataset(mode=args.mode, transform= transforms.ToTensor())
+    for i in range(len(dataset)):
+        image, labels = dataset[i]
     
-    dataloader = create_train_loader()
-    for image, labels in dataloader:
+    # dataloader = create_train_loader(batch_size=1)
+    # for image, labels in dataloader:
         
         print("image.shape",image.shape)
         print("landmarks.shape",labels['landmarks'].shape)
         print("euler_angles.shape",labels['euler_angles'].shape)
         print("attributes.shape",labels['attributes'].shape)
         print('***' * 40, '\n')        
-        time.sleep(2)
+
+        time.sleep(1000)
