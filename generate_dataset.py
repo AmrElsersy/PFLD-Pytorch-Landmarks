@@ -70,7 +70,7 @@ class Data_Augumentor:
                 os.mkdir(os.path.join(self.test_path, 'images'))           
             print(f'created data/{mode} folder')
         except:
-            print(f"{mode} folder already exist")
+            print(f"data/{mode} folder already exist .. delete it to generate a new dataset")
             return
 
         lines = self.train_lines if mode == 'train' else self.test_lines
@@ -83,6 +83,7 @@ class Data_Augumentor:
         for annotations_line in lines:
             # read annotations
             annotations = self.read_annotations(annotations_line)
+            print('k=',k)
             image_full_path = annotations['path']
             image = self.read_image(image_full_path)
             rect = annotations['rect']
@@ -100,12 +101,17 @@ class Data_Augumentor:
             all_landmarks = []
 
             if mode == 'test':
-                image, rect, landmarks = self.crop_face(image, rect, landmarks)
+                image, rect, landmarks = self.crop_face(np.copy(image), np.copy(rect), np.copy(landmarks))
                 all_images = [image]
                 all_landmarks = [landmarks]
             else:
                 original_image, _, original_landmarks = self.crop_face(np.copy(image), np.copy(rect), np.copy(landmarks))
-                flip_original_image, flip_original_landmarks = flip(original_image, original_landmarks)
+                flip_original_image, flip_original_landmarks = flip(np.copy(original_image), np.copy(original_landmarks))
+
+                all_images.append(original_image)
+                all_landmarks.append(original_landmarks)
+                all_images.append(flip_original_image)
+                all_landmarks.append(flip_original_landmarks)
 
                 # crop face & resize to a bigger rect
                 scaled_rect = self.scale_rect(rect, 0.25)
@@ -120,25 +126,32 @@ class Data_Augumentor:
 
                 augumentation_angles_flip = [20, -20]
                 for angle in augumentation_angles_flip:
-                    rotated_image, rotated_landmarks = rotate(flip_image, flip_landmarks, angle)
+                    rotated_image, rotated_landmarks = rotate(np.copy(flip_image), np.copy(flip_landmarks), angle)
                     all_images.append(rotated_image)
                     all_landmarks.append(rotated_landmarks)
-
-                all_images.append(original_image)
-                all_images.append(flip_original_image)
-                all_landmarks.append(original_landmarks)
-                all_landmarks.append(flip_original_landmarks)
 
             # for every augumented image
             for i, img in enumerate(all_images):
                 img = all_images[i]
                 landmark = all_landmarks[i]
+
+                # # visualize
+                # for point in landmark:
+                #     point = (int(point[0]), int(point[1]))
+                #     cv2.circle(img, point, 1, (0,255,0), -1)
+                # img = cv2.resize(image, (300,300))
+                # cv2.imshow("image", img)
+                # if cv2.waitKey(0) == 27:
+                #     exit(0)
+                # print(image_full_path)
+                # print("*"*80)
+
                 # generate euler angles from landmarks
                 _, _, euler_angles = self.euler_estimator.eular_angles_from_landmarks(landmark)
                 euler_str = ' '.join([str(round(angle,2)) for angle in euler_angles])
 
                 # get image name
-                new_image_path = self.save_image(img, image_full_path, i, save_path)
+                new_image_path = self.save_image(img, image_full_path, k, save_path) # id should be unique for every img
 
                 # convert landmarks to string
                 landmarks_list = landmark.reshape(196,).tolist()
@@ -165,24 +178,16 @@ class Data_Augumentor:
         print('*'*60,f'\n\t {mode} annotations is saved @ data/{mode}/annotations.txt')
         time.sleep(2)
 
-    def save_image(self, img, full_name, id, save_path):
-        full_name = full_name.split('/')
-        image_name = full_name[-1][:-4] + '_' + str(id) + '.jpg'
-        image_path = os.path.join(save_path, 'images', image_name)
-        cv2.imwrite(image_path, img)
-        return image_path
-
     def crop_face(self, image, rect, landmarks):
         (x1, y1), (x2, y2) = rect           
-        # ROI
         image = image[int(y1):int(y2), int(x1):int(x2)]
 
         # resize the image & store the dims to resize landmarks
         h, w = image.shape[:2]
         image = cv2.resize(image, self.face_shape)
-        new_h, new_w = self.face_shape
 
         # scale factor in x & y to scale the landmarks
+        new_h, new_w = self.face_shape
         fx = new_w / w
         fy = new_h / h
         # translate the landmarks then scale them
@@ -196,6 +201,13 @@ class Data_Augumentor:
         rect[1] = (x2-x1, y2-y1)
 
         return image, rect, landmarks
+
+    def save_image(self, img, full_name, id, save_path):
+        full_name = full_name.split('/')
+        image_name = full_name[-1][:-4] + '_' + str(id) + '.jpg'
+        image_path = os.path.join(save_path, 'images', image_name)
+        cv2.imwrite(image_path, img)
+        return image_path
 
     def read_annotations(self, annotations):
         annotations = annotations.split(' ')
@@ -221,7 +233,6 @@ class Data_Augumentor:
         path = os.path.join(self.images_root, name)
         image = cv2.imread(path, cv2.IMREAD_COLOR)
         return image        
-
 
 
 
