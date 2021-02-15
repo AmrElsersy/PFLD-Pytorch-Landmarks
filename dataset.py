@@ -15,124 +15,61 @@ import numpy as np
 import cv2
 
 class WFLW_Dataset(Dataset):
-    def __init__(self, root='data/WFLW', mode='train', transform=False):
+    def __init__(self, root='data', mode='train', transform=None):
         self.root = root
-        self.transform = transforms.ToTensor() if transform else None
-
-        self.images_root = os.path.join(self.root, "WFLW_images")
-        self.face_shape = (112,112)
+        self.transform = transform
 
         self.mode = mode 
         assert mode in ['train', 'val']
 
-        self.annotations_root = os.path.join(self.root, "WFLW_annotations")
-        self.train_test_root = os.path.join(self.annotations_root, "list_98pt_rect_attr_train_test")
-        self.train_name = os.path.join(self.train_test_root, "list_98pt_rect_attr_train.txt")
-        self.test_name = os.path.join(self.train_test_root, "list_98pt_rect_attr_test.txt")
+        self.images_root = os.path.join(self.root, self.mode, "images")
+        self.annotations_root = os.path.join(self.root, self.mode, "annotations.txt")
 
-        self.test_file  = open(self.test_name ,'r')
-        self.train_file = open(self.train_name,'r')
-
-        self.test_lines  = self.test_file.read().splitlines()
-        self.train_lines = self.train_file.read().splitlines()
+        self.annotations_file  = open(self.annotations_root ,'r')
+        self.annotations_lines  = self.annotations_file.read().splitlines()
 
     def __getitem__(self, index):
 
         labels = self.read_annotations(index)
         image = self.read_image(labels['image_name'])
 
-        # clip the image rect and translate the landmarks coordinates
-        rect = labels['rect']
-        landmarks = labels['landmarks']
-
-        (x1, y1), (x2, y2) = rect            
-        # print(x1,x2, y1,y2, image.shape)
-
-        # ========  get a bigger rect ======== 
-        # rect_dw = (x2 - x1) *.2
-        # rect_dy = (y2 - y1) *.2
-        # x1 -= rect_dw/2
-        # x2 += rect_dw/2
-        # y1 -= rect_dy/2
-        # y2 += rect_dy/2
-        # x1 = max(x1, 0)
-        # x2 = max(x2, 0)
-        # y1 = max(y1, 0)
-        # y2 = max(y2, 0)
-        # rect[0] = (x1,y1)
-        # rect[1] = (x2,y2)
-
-
-        # print("RRR:", rect_dw, rect_dy)
-        image = image[int(y1):int(y2), int(x1):int(x2)]
-
-        # resize the image & store the dims to resize landmarks
-        h, w = image.shape[:2]
-        # print(x1,x2, y1,y2, image.shape)
-        image = cv2.resize(image, self.face_shape)
-        new_h, new_w = self.face_shape
-
-        # scale factor in x & y to scale the landmarks
-        fx = new_w / w
-        fy = new_h / h
-        # translate the landmarks then scale them
-        landmarks -= rect[0]
-        for landmark in landmarks:
-            landmark[0] *= fx
-            landmark[1] *= fy
-
-        # face rect
-        rect[0] = (0,0)
-        rect[1] = (x2-x1, y2-y1)
-
         if self.transform:
-            # convert to torch Tensor
-            # print(image)
+            # to tensor
             image = self.transform(image)
-            # print('after image:',image)
-            # print(labels['landmarks'])
 
             # Noramlization Landmarks
-            labels['landmarks'] = np.clip(labels['landmarks'], 0.0, 112.0)
             labels['landmarks'] = self.transform(labels['landmarks']) / 112
-
-            # print('after',labels['landmarks'])
+            # to tensor
             labels['attributes'] = self.transform(labels['attributes'].reshape(1,6))
             labels['euler_angles'] = self.transform(labels['euler_angles'].reshape(1,3))
-            labels['rect'] = self.transform(labels['rect'])
 
         return image, labels
 
     def read_annotations(self, index):
-        annotations = self.train_lines[index] if self.mode == 'train' else self.test_lines[index]
+        annotations = self.annotations_lines[index]
         annotations = annotations.split(' ')
             
         # 98 lanamark points
         # pose expression illumination make-up occlusion blur
-        # rect coordinates (x_min, y_min)(right-down) & (x_max, y_max)(top-left)
-        # image sub-path that contains the face: sub_folder/image_name
+        # image relative-path 
 
-        landmarks = annotations[0:196]
-        rect = annotations[196:200]        
-        attributes = annotations[200:206]
-        image_name = annotations[206]
-        euler_angles = annotations[207:210]
+        image_name = annotations[0]
+        landmarks = annotations[1:197]
+        attributes = annotations[197:203]
+        euler_angles = annotations[203:206]
 
         # strings to num
         landmarks = [float(landmark) for landmark in landmarks]
-        rect = [float(coord) for coord in rect]
         attributes = [int(attribute) for attribute in attributes]
         euler_angles = [float(angle) for angle in euler_angles]
         
         # list to numpy 
         landmarks = np.array(landmarks, dtype=np.float).reshape(98,2)
-        rect = np.array(rect, dtype=np.float).reshape((2,2))
         attributes = np.array(attributes, dtype=np.int).reshape((6,))
         euler_angles = np.array(euler_angles, dtype=np.float).reshape((3,))
 
         labels = {
             "landmarks" : landmarks,
-            "rect"      : rect,
             "attributes": attributes,
             "image_name": image_name,
             "euler_angles": euler_angles
@@ -140,42 +77,36 @@ class WFLW_Dataset(Dataset):
 
         return labels
 
-    def read_image(self, name):
-        path = os.path.join(self.images_root, name)
-        # image = Image.open(path)
+    def read_image(self, path):
+        path = os.path.join(path)
         image = cv2.imread(path, cv2.IMREAD_COLOR)
         return image        
 
-
     def __len__(self):
-        if self.mode == 'train':
-            return len(self.train_lines)
-        elif self.mode == 'val':
-            return len(self.test_lines)
+        return len(self.annotations_lines)
 
 
-
-def create_train_loader(root='data/WFLW', batch_size = 64, transform=False):
+def create_train_loader(root='data', batch_size = 64, transform=transforms.ToTensor()):
     dataset = WFLW_Dataset(root, mode='train', transform=transform)
     dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
     return dataloader
 
-def create_test_loader(root='data/WFLW', batch_size = 1, transform=False):
-    dataset = WFLW_Dataset(root, mode='val', transform=transform)
+def create_test_loader(root='data', batch_size = 1, transform=transforms.ToTensor()):
+    dataset = WFLW_Dataset(root, mode='test', transform=transform)
     dataloader = DataLoader(dataset, shuffle=False, batch_size=batch_size)
     return dataloader
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', type=str, default='train', choices=['train', 'val'])
+    parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
     args = parser.parse_args()
 
     dataset = WFLW_Dataset(mode=args.mode)
     # for i in range(len(dataset)):
     #     image, labels = dataset[i]
-
-    dataloader = DataLoader(dataset, batch_size=10)
+    
+    dataloader = create_train_loader()
     for image, labels in dataloader:
         
         print("image.shape",image.shape)
@@ -184,5 +115,3 @@ if __name__ == "__main__":
         print("attributes.shape",labels['attributes'].shape)
         print('***' * 40, '\n')        
         time.sleep(2)
-
-
