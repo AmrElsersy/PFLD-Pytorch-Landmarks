@@ -19,12 +19,11 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
 def rotatedRectWithMaxArea(side, angle):
     """
-    Given a rectangle of size wxh that has been rotated by 'angle' (in
-    radians), computes the width and height of the largest possible
-    axis-aligned rectangle (maximal area) within the rotated rectangle.
+    Given a square image of size side x side that has been rotated by 'angle' 
+    (in degree), computes the new side of the largest possible
+    axis-aligned square (maximal area) within the rotated image.
     """
     # convert to radians
     angle = angle * math.pi/180
@@ -60,14 +59,26 @@ def rotate(image, landmarks, theta):
     landmarks = (rotation_matrix @ landmarks.T).T
 
     # # print(landmarks.shape)
-    # for point in landmarks:
-    #     point = (int(point[0]), int(point[1]))
-    #     cv2.circle(image, point, 0, (0,0,255), -1)
     side = w # can be h also as w = h
     new_side = rotatedRectWithMaxArea(side, theta)
-    print(f"new w,h =({new_side}, {new_side})")
-    image = image[center[1]-new_side//2:center[1]+new_side//2,  center[0]-new_side//2:center[0]+new_side//2 ]
-    image = cv2.resize(image, (300,400))
+    # print(f"new w,h =({new_side}, {new_side})")
+    # print(f"center ={center}")
+    top_left = (center[0] - new_side//2, center[1] - new_side//2)
+    bottom_right = (center[0] + new_side//2, center[1] + new_side//2)
+    # print('top_left',top_left)
+    # print('botton_right:', bottom_right)
+
+    image = image[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+    print(image.shape)
+
+    landmarks -= top_left 
+
+    image, landmarks = resize(image, landmarks)
+
+    for point in landmarks:
+        point = (int(point[0]), int(point[1]))
+        cv2.circle(image, point, 0, (0,0,255), -1)
+    # image = cv2.resize(image, (300,300))
     cv2.imshow("image"+str(theta), image)
     cv2.waitKey(0)
 
@@ -94,7 +105,11 @@ def flip(image, landmarks):
 
     return image, landmarks
 
-def scale(image, landmarks, factor):
+def resize(image, landmarks, size=(112,112)):
+    side = image.shape[0]    
+    scale = size[0] / side
+    image = cv2.resize(image, size)
+    landmarks *= scale
     return image, landmarks
 
 
