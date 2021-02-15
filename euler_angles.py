@@ -138,7 +138,7 @@ if __name__ == "__main__":
     from dataset import WFLW_Dataset
     from visualization import WFLW_Visualizer
 
-    dataset = WFLW_Dataset()
+    dataset = WFLW_Dataset(mode='train')
     visualizer = WFLW_Visualizer()
     eular_estimator = EulerAngles()        
 
@@ -147,9 +147,11 @@ if __name__ == "__main__":
         landmarks = labels['landmarks']
 
         rvec, tvec, euler_angles = eular_estimator.eular_angles_from_landmarks(landmarks)
-        
         image = visualizer.draw_euler_angles(image, rvec, tvec, euler_angles, eular_estimator.camera_intrensic_matrix)
 
+        print("rvec\n", rvec)
+        print("tvec\n", tvec)
+        print("euler ", euler_angles)        
         print ("*" * 80, '\n\n\t press n for next example .... ESC to exit')
         visualizer.show(image)
 

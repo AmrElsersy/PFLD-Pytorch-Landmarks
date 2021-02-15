@@ -111,8 +111,6 @@ def resize(image, landmarks, size=(112,112)):
 
 # ============= Euler ==================
 def euler_to_rotation(euler_angles) :
-     
-    
     R_x = np.array([[1,           0,                       0              ],
                     [0,  np.cos(np.radians(euler_angles[0])), -np.sin(np.radians(euler_angles[0]))],
                     [0,  np.sin(np.radians(euler_angles[0])),  np.cos(np.radians(euler_angles[0]))]

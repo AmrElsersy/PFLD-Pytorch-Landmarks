@@ -20,7 +20,7 @@ class WFLW_Dataset(Dataset):
         self.transform = transform
 
         self.mode = mode 
-        assert mode in ['train', 'val']
+        assert mode in ['train', 'test']
 
         self.images_root = os.path.join(self.root, self.mode, "images")
         self.annotations_root = os.path.join(self.root, self.mode, "annotations.txt")
