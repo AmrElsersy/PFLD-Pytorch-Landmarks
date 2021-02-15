@@ -9,14 +9,16 @@ import torch.nn as nn
 
 class DepthSepConvBlock(nn.Module):
     """
-        Depth wise Separable Convolution Block for MobileNet
+        Depth wise Separable Convolution Block proposed in MobileNet
         Used in PFLD backbone
     """
     def __init__(self, in_channels, out_channels):
         super(DepthSepConvBlock, self).__init__()
         """
-            groups parameter: perform a groups of conv 
-            https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+            Notes:
+                - groups parameter: perform a groups of conv 
+                https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+                - Separates channel expantion from depth wise conv 
         """
         self.depth_wise_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, groups=in_channels,padding=1)
         self.bn1 = nn.BatchNorm2d(in_channels)

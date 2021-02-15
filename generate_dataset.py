@@ -8,6 +8,7 @@ Description:
 import os, time, enum
 from PIL import Image
 import argparse
+from numpy.lib.type_check import imag
 import torch
 import numpy as np 
 import cv2
@@ -18,15 +19,67 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
 def rotate(image, landmarks, theta):
+
+    # rotation center = image center
+    w,h = image.shape[:2]
+    center = (w//2, h//2)
+    # get translation-rotation matrix numpy array shape (2,3) has rotation and last column is translation
+    # note that it translate the coord to the origin apply the rotation then translate it again to cente
+    rotation_matrix = cv2.getRotationMatrix2D(center, theta, 1)
+    # print("rotation_matrix",rotation_matrix, type(rotation_matrix), rotation_matrix.shape)
+    image = cv2.warpAffine(image, rotation_matrix, (h,w))
+
+    # add homoginous 1 to 2D landmarks to be able to use the same translation-rotation matrix
+    landmarks =np.hstack((landmarks, np.ones((98, 1))))
+    landmarks = (rotation_matrix @ landmarks.T).T
+
+    # print(landmarks.shape)
+    # for point in landmarks:
+    #     point = (int(point[0]), int(point[1]))
+    #     cv2.circle(image, point, 0, (0,0,255), -1)
+
+    # image = cv2.resize(image, (300,400))
+    # cv2.imshow("image"+str(theta), image)
+    # cv2.waitKey(0)
+
     return image, landmarks
 
+
 def flip(image, landmarks):
+    # horizontal flip
+    image = cv2.flip(image, 1)
+
+    w,h = image.shape[:2]
+    center = (w//2, h//2)
+
+    # translate it to origin
+    landmarks -= center 
+    # apply reflection(flip) matrix
+    flip_matrix = np.array([
+        [-1, 0],
+        [0 , 1]
+    ])   
+    landmarks = (flip_matrix @ landmarks.T).T
+    # translate again to its position
+    landmarks += center
+
     return image, landmarks
 
 def scale(image, landmarks, factor):
     return image, landmarks
+
+
+from dataset import WFLW_Dataset
+dataset = WFLW_Dataset()
+image, labels = dataset[0]
+landmarks = labels['landmarks']
+
+# rotate(None, None, 30)
+# rotate(None, None, 15)
+image, landmarks = flip(image, landmarks)
+rotate(image, landmarks,30)
+exit(0)
 
 class Data_Augumentor:
     def __init__(self):
