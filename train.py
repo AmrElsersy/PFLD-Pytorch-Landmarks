@@ -16,7 +16,7 @@ import torch.nn as nn
 import torch.optim
 import torch.utils.tensorboard as tensorboard
 
-from dataset import WFLW_Dataset, LoadMode
+from dataset import WFLW_Dataset
 from dataset import create_test_loader, create_train_loader
 from visualization import WFLW_Visualizer
 
@@ -34,13 +34,13 @@ cudnn.enabled = True
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=600, help='num of training epochs')
-    parser.add_argument('--batch_size', type=int, default=20, help="training batch size")
+    parser.add_argument('--epochs', type=int, default=800, help='num of training epochs')
+    parser.add_argument('--batch_size', type=int, default=18, help="training batch size")
     parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--logging', type=str, default='checkpoint/logging', help='path of logging')
     parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-6, help='optimizer weight decay')
-    parser.add_argument('--datapath', type=str, default='data/WFLW', help='root path of WFLW dataset')
+    parser.add_argument('--datapath', type=str, default='data', help='root path of augumented WFLW dataset')
     parser.add_argument('--pretrained', type=str,default='checkpoint/model_weights/weights.pth.tar',help='load checkpoint')
     parser.add_argument('--resume', action='store_true', help='resume from pretrained path specified in prev arg')
     parser.add_argument('--savepath', type=str, default='checkpoint/model_weights/weights.pth.tar', help='save checkpoint')    
@@ -65,8 +65,8 @@ writer = tensorboard.SummaryWriter(args.tensorboard)
 
 def main():
     # ========= dataloaders ===========
-    train_dataloader = create_train_loader(root=args.datapath,batch_size=args.batch_size, transform=True)
-    test_dataloader  = create_test_loader(root=args.datapath, batch_size=args.batch_size, transform=True)    
+    train_dataloader = create_train_loader(root=args.datapath,batch_size=args.batch_size)
+    test_dataloader  = create_test_loader(root=args.datapath, batch_size=args.batch_size)    
     start_epoch = 0
     # ======== models & loss ========== 
     pfld = PFLD().to(device)
@@ -92,6 +92,7 @@ def main():
         # =========== train / validate ===========
         w_train_loss, train_loss = train_one_epoch(pfld, auxiliarynet, loss, optimizer, train_dataloader, epoch)
         val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
+        logging.info(f"\ttraining epoch={epoch} .. weighted_loss= {w_train_loss} ... loss={train_loss}")
         # ============= tensorboard =============
         writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
         writer.add_scalar('train_loss',train_loss, epoch)
@@ -134,8 +135,7 @@ def train_one_epoch(pfld_model, auxiliary_model, criterion, optimizer, dataloade
 
         train_w_loss = round(weighted_loss.item(),3)
         train_loss = round(loss.item(),3)
-        print(f"\ttraining epoch={epoch} .. weighted_loss= {train_w_loss} ... loss={train_loss}")
-        logging.info(f"\ttraining epoch={epoch} .. weighted_loss= {train_w_loss} ... loss={train_loss}")
+        print(f"training epoch={epoch} .. weighted_loss= {train_w_loss} ... loss={train_loss}\n")
 
         optimizer.zero_grad()
         weighted_loss.backward()
@@ -171,7 +171,7 @@ def validate(pfld_model, auxiliary_model, criterion, dataloader, epoch):
             weighted_loss = round(weighted_loss.item(),3)
             loss = round(loss.item(),3)
             print(f"\tval epoch={epoch} .. val_weighted_loss= {weighted_loss} ... val_loss={loss}\n")
-            logging.info(f"\tval epoch={epoch} .. val_weighted_loss= {weighted_loss} ... val_loss={loss}\n")
+            # logging.info(f"\tval epoch={epoch} .. val_weighted_loss= {weighted_loss} ... val_loss={loss}\n")
             
             validation_losses.append(loss)
 
@@ -201,12 +201,10 @@ if __name__ == "__main__":
     #     landmarks = labels['landmarks'].squeeze()[0]
     #     euler_angles = labels['euler_angles'].squeeze()[0]
     #     attributes = labels['attributes'].squeeze()[0]
-    #     rect = labels['rect'].squeeze()[0]
     #     l = {}
     #     l['landmarks'] = landmarks.numpy()
     #     l['euler_angles'] = euler_angles.numpy()
     #     l['attributes'] = attributes.numpy()
-    #     l['rect'] = rect.numpy()
     #     visualizer = WFLW_Visualizer()
     #     visualizer.visualize(image, l)
 

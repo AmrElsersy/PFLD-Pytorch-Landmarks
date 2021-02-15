@@ -17,9 +17,10 @@ import torch.nn as nn
 import torch.optim
 import torch.utils.tensorboard as tensorboard
 
-from dataset import WFLW_Dataset, LoadMode
+from dataset import WFLW_Dataset
 from dataset import create_test_loader, create_train_loader
 from visualization import WFLW_Visualizer
+import torchvision.transforms.transforms as transforms
 
 from model.Loss import PFLD_L2Loss
 from model.model import PFLD, AuxiliaryNet
@@ -36,7 +37,7 @@ cudnn.enabled = True
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--datapath', type=str, default='data/WFLW', help='root path of WFLW dataset')
+    parser.add_argument('--datapath', type=str, default='data', help='root path of augumented WFLW dataset')
     parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth.tar',help='load weights')
     args = parser.parse_args()
     return args
@@ -48,7 +49,7 @@ args = parse_args()
 
 def main():
     # ========= dataset ===========
-    dataset = WFLW_Dataset(root=args.datapath, mode='train', transform=True)
+    dataset = WFLW_Dataset(root=args.datapath, mode='test', transform=transforms.ToTensor())
     visualizer = WFLW_Visualizer()
     # =========== models ============= 
     pfld = PFLD().to(device)

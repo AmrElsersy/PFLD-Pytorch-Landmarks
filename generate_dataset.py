@@ -83,7 +83,6 @@ class Data_Augumentor:
         for annotations_line in lines:
             # read annotations
             annotations = self.read_annotations(annotations_line)
-            print('k=',k)
             image_full_path = annotations['path']
             image = self.read_image(image_full_path)
             rect = annotations['rect']
@@ -151,7 +150,7 @@ class Data_Augumentor:
                 euler_str = ' '.join([str(round(angle,2)) for angle in euler_angles])
 
                 # get image name
-                new_image_path = self.save_image(img, image_full_path, k, save_path) # id should be unique for every img
+                new_image_path = self.save_image(img, image_full_path, k, i, save_path) # id should be unique for every img
 
                 # convert landmarks to string
                 landmarks_list = landmark.reshape(196,).tolist()
@@ -202,9 +201,9 @@ class Data_Augumentor:
 
         return image, rect, landmarks
 
-    def save_image(self, img, full_name, id, save_path):
+    def save_image(self, img, full_name, k, id, save_path):
         full_name = full_name.split('/')
-        image_name = full_name[-1][:-4] + '_' + str(id) + '.jpg'
+        image_name = full_name[-1][:-4] + '_' + str(k) + '_' + str(id) + '.jpg'
         image_path = os.path.join(save_path, 'images', image_name)
         cv2.imwrite(image_path, img)
         return image_path
