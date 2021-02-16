@@ -100,8 +100,8 @@ class Data_Augumentor:
             all_images = []
             all_landmarks = []
 
-            rect = self.scale_rect(np.copy(rect), 0.6, original_image.shape)
-            if mode == 'train':
+            rect = self.scale_rect(np.copy(rect), 0.8, original_image.shape)
+            if mode == 'test':
                 image, rect, landmarks = self.crop_face_rect(np.copy(original_image), np.copy(rect), np.copy(landmarks))
                 image, landmarks, skip = self.crop_face_landmarks(image, landmarks)
                 if skip:
@@ -110,29 +110,39 @@ class Data_Augumentor:
                 all_landmarks = [landmarks]
             else:
                 image, rect, landmarks = self.crop_face_rect(np.copy(original_image), np.copy(rect), np.copy(landmarks))
+                n_augumentation = 6
+                for i in range(n_augumentation):
+                    angle = 0
+                    if i >= 0 and i < 2:
+                        angle = np.random.randint(-30, -10)
+                    elif i >= 2 and i < 4:
+                        angle = np.random.randint(-10, 10)
+                    elif i >= 4 and i < 6:
+                        angle = np.random.randint(10, 30)
 
-                for i in range(8):
-                    angle = np.random.randint(-30, 30)
                     augument_image, augument_landmarks = rotate(np.copy(image), np.copy(landmarks), angle)
+                    
+                    if np.random.choice((True, False)):
+                        augument_image, augument_landmarks = flip(augument_image, augument_landmarks)
+
                     augument_image, augument_landmarks, skip = self.crop_face_landmarks(augument_image, augument_landmarks)
                     if skip:
                         continue
 
-                    # visualize
-                    img = np.copy(augument_image)
-                    for point in augument_landmarks:
-                        point = (int(point[0]), int(point[1]))
-                        cv2.circle(img, point, 1, (0,255,0), -1)
-                    img = cv2.resize(img, (300,300))
-                    cv2.imshow("image", img)
-                    if cv2.waitKey(0) == 27:
-                        exit(0)
-                    print(image_full_path)
-                    print("*"*80)
-                    
-                    # if np.random.choice((True, False)):
-                    #     augument_image, augument_landmarks = flip(augument_image, augument_landmarks)
-                    
+
+                    # # visualize
+                    # img = np.copy(augument_image)
+                    # for point in augument_landmarks:
+                    #     point = (int(point[0]), int(point[1]))
+                    #     cv2.circle(img, point, 1, (0,255,0), -1)
+                    # img = cv2.resize(img, (300,300))
+                    # cv2.imshow("image", img)
+                    # if cv2.waitKey(0) == 27:
+                    #     exit(0)
+                    # print(image_full_path)
+                    # print("*"*80)
+
+
                     all_images.append(augument_image)
                     all_landmarks.append(augument_landmarks)
 
@@ -188,16 +198,17 @@ class Data_Augumentor:
         top_left = np.min(landmarks, axis=0).astype(np.int32) 
         bottom_right = np.max(landmarks, axis=0).astype(np.int32)
 
+        x1,y1 = top_left
+        x2,y2 = bottom_right
+
         # # in case of wh * 1.2
         # wh = bottom_right - top_left + 1
         # center = (top_left + wh/2).astype(np.int32)
-        # boxsize = int(np.max(wh*1.2))
+        # # boxsize = int(np.max(wh*1.2))
+        # boxsize = int(np.max(wh))
         # top_left = center - boxsize//2
         # x1, y1 = top_left
         # x2, y2 = top_left + boxsize
-
-        x1,y1 = top_left
-        x2,y2 = bottom_right
 
         x1 = max(0, x1)
         y1 = max(0, y1)
@@ -206,7 +217,7 @@ class Data_Augumentor:
         y2 = min(h, y2)
 
         # landmarks normalization
-        landmarks -= top_left
+        landmarks -= (x1,y1)
         landmarks = (landmarks / [x2-x1, y2-y1]) * 112 
 
         # crop & resize
@@ -217,6 +228,7 @@ class Data_Augumentor:
         # because this will lead to a big shift to landmarks & wrong annotations
         skip = False
         min_neg = min(x1,y1)
+        # print(x1,y1, '...', x2,y2)
         if min_neg < -5:
             skip = True
 

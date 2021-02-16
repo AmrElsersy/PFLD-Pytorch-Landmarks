@@ -45,8 +45,8 @@ def rotate(image, landmarks, theta):
     w,h = image.shape[:2]
     cx, cy = (w//2, h//2)
 
-    # # random shift
-    # random_shift = 10
+    # random shift
+    # random_shift = 5
     # cx += int(np.random.randint(-random_shift, random_shift))
     # cy += int(np.random.randint(-random_shift, random_shift))
 
@@ -56,7 +56,8 @@ def rotate(image, landmarks, theta):
     # note that it translate the coord to the origin apply the rotation then translate it again to cente
     rotation_matrix = cv2.getRotationMatrix2D(center, theta, 1)
     # print("rotation_matrix",rotation_matrix, type(rotation_matrix), rotation_matrix.shape)
-    image = cv2.warpAffine(image, rotation_matrix, (130,130))
+    new_shape = (image.shape[0], image.shape[1])
+    image = cv2.warpAffine(image, rotation_matrix, new_shape)
 
     # add homoginous 1 to 2D landmarks to be able to use the same translation-rotation matrix
     landmarks =np.hstack((landmarks, np.ones((98, 1))))
@@ -108,7 +109,12 @@ def flip(image, landmarks):
     landmarks += center
 
     # just flip the order of landmarks points .. mask is from https://github.com/polarisZhao/PFLD-pytorch/blob/master/data/Mirror98.txt
-    flip_mask = [32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,46,45,44,43,42,50,49,48,47,37,36,35,34,33,41,40,39,38,51,52,53,54,59,58,57,56,55,72,71,70,69,68,75,74,73,64,63,62,61,60,67,66,65,82,81,80,79,78,77,76,87,86,85,84,83,92,91,90,89,88,95,94,93,97,96]
+    flip_mask = [   32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12
+                    ,11,10,9,8,7,6,5,4,3,2,1,0,46,45,44,43,42,50,49,48,47,37,36,35,
+                    34,33,41,40,39,38,51,52,53,54,59,58,57,56,55,72,71,70,69,68,75,
+                    74,73,64,63,62,61,60,67,66,65,82,81,80,79,78,77,76,87,86,85,84,
+                    83,92,91,90,89,88,95,94,93,97,96]
+
     landmarks = landmarks[flip_mask]
 
     return image, landmarks
