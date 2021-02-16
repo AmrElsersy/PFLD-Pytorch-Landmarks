@@ -43,7 +43,15 @@ def rotate(image, landmarks, theta):
 
     # rotation center = image center
     w,h = image.shape[:2]
-    center = (w//2, h//2)
+    cx, cy = (w//2, h//2)
+
+    # # random shift
+    # random_shift = 10
+    # cx += int(np.random.randint(-random_shift, random_shift))
+    # cy += int(np.random.randint(-random_shift, random_shift))
+
+    center = (cx, cy)
+
     # get translation-rotation matrix numpy array shape (2,3) has rotation and last column is translation
     # note that it translate the coord to the origin apply the rotation then translate it again to cente
     rotation_matrix = cv2.getRotationMatrix2D(center, theta, 1)

@@ -81,20 +81,21 @@ def main():
             pred_angles = auxiliarynet(featrues)
             print('pred_angles',pred_angles)
             print('gt_angles',labels['euler_angles'])
-            
+            print(f'gt_landmarks shape {landmarks.shape}, \n {landmarks[:5]}')
+            print(f'landmarks shape {pred_landmarks.shape}, \n {pred_landmarks.reshape(98,2)[:5]}')
+
             t3 = time.time()
-            print(f"\ttime PFLD landmarks= {round((t2-t1)*1000,3)} ms")
-            print(f"\ttime auxiliary euler= {round((t3-t2)*1000,3)} ms")
-            print(f"\ttotal time= {round((t3-t1)*1000,3)} ms\n")
-            
+            # print(f"\ttime PFLD landmarks= {round((t2-t1)*1000,3)} ms")
+            # print(f"\ttime auxiliary euler= {round((t3-t2)*1000,3)} ms")
+            # print(f"\ttotal time= {round((t3-t1)*1000,3)} ms\n")
+
+            landmarks = landmarks.cpu().reshape(98,2).numpy()
+            landmarks = (landmarks*112.0).astype(np.int32) 
+
             pred_landmarks = pred_landmarks.cpu().reshape(98,2).numpy()
+            pred_landmarks = (pred_landmarks*112.0).astype(np.int32) 
+
             image = to_numpy_image(image[0].cpu())
-
-            # print("*"*80,"\npredicted:",pred_landmarks)
-            # print("*"*80,"\labels:",landmarks)
-
-            pred_landmarks = (pred_landmarks*100).astype(np.int32) 
-
             image = (image*255).astype(np.uint8)
             image = np.clip(image, 0, 255)
 
@@ -103,8 +104,12 @@ def main():
             img2 = np.copy(img)
             img2[:,:] = 0
 
+            visualizer.landmarks_radius = 0
+            visualizer.landmarks_color = (0,255,0)
             img = visualizer.draw_landmarks(img, pred_landmarks)
             img2 = visualizer.draw_landmarks(img2, pred_landmarks)
+            visualizer.landmarks_color = (0,0,255)
+            img = visualizer.draw_landmarks(img, landmarks)
             visualizer.show(img2, wait=False, winname="black")
             visualizer.show(img)
             print('*'*70,'\n')
