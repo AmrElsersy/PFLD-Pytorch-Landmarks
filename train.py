@@ -85,7 +85,11 @@ def main():
         print("******************* Start training from scratch *******************\n")
         time.sleep(5)
     # =========== optimizer =========== 
-    parameters = list(pfld.parameters()) + list(auxiliarynet.parameters())
+    # parameters = list(pfld.parameters()) + list(auxiliarynet.parameters())
+    parameters = [
+        { 'params': pfld.parameters() }, 
+        { 'params': auxiliarynet.parameters()  } 
+    ]
     optimizer = torch.optim.Adam(parameters, lr=args.lr, weight_decay=args.weight_decay)
     # ========================================================================
     for epoch in range(start_epoch, args.epochs):

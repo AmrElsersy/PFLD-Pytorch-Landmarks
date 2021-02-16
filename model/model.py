@@ -124,7 +124,7 @@ class AuxiliaryNet(nn.Module):
         self.conv2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=1)
         self.conv3 = nn.Conv2d(in_channels=128, out_channels=32,  kernel_size=3, stride=2, padding=1)
         self.conv4 = nn.Conv2d(in_channels=32,  out_channels=128,  kernel_size=7, stride=1)
-        self.max_pool1 = nn.MaxPool2d(3)
+        self.max_pool = nn.MaxPool2d(3)
         self.fc1 = nn.Linear(128, 32)
         self.fc2 = nn.Linear(32, 3)
 
