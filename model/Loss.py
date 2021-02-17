@@ -35,9 +35,9 @@ class PFLD_L2Loss(nn.Module):
         # attributes_weight = torch.sum(attributes_w_n.mul(mat_ratio), axis=1)
 
         
-        to_radians = 0.0174532925
         diff = (angles-gt_angles)
         # it should be converted to radians .. but since diff is small the weight will be allways samll, so it is better to deal with degrees
+        # to_radians = 0.0174532925
         # diff *= to_radians 
         angles_weight = torch.sum(1-torch.cos(diff), axis=1)
         

@@ -32,7 +32,8 @@ class WFLW_Dataset(Dataset):
 
         labels = self.read_annotations(index)
         image = self.read_image(labels['image_name'])
-
+        labels['landmarks'] *= 112
+        
         if self.transform:
             # to tensor
             # temp = np.copy(image)
@@ -84,7 +85,7 @@ class WFLW_Dataset(Dataset):
         return labels
 
     def read_image(self, path):
-        path = os.path.join(path)
+        # path = os.path.join(path)
         image = cv2.imread(path, cv2.IMREAD_COLOR)
         return image        
 

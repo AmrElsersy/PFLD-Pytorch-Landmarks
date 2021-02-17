@@ -1,2 +1,172 @@
-[2021-02-16 09:52:47,841] [p34829] [train.py:82] [INFO] 	Loaded checkpoint from checkpoint/model_weights/weights.pth.tar
+[2021-02-17 04:38:18,692] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 1.179
+
+[2021-02-17 04:38:19,694] [p5941] [train.py:99] [INFO] 	training epoch=0 .. weighted_loss= 11.551375543066573 ... loss=1.8907114825254296
+[2021-02-17 04:38:19,766] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 04:46:25,904] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.843
+
+[2021-02-17 04:46:26,905] [p5941] [train.py:99] [INFO] 	training epoch=1 .. weighted_loss= 3.6939921200046117 ... loss=0.7891340770267686
+[2021-02-17 04:54:30,301] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.669
+
+[2021-02-17 04:54:31,303] [p5941] [train.py:99] [INFO] 	training epoch=2 .. weighted_loss= 6.711911733394583 ... loss=0.6923987976986278
+[2021-02-17 04:54:31,313] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 05:02:35,858] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.637
+
+[2021-02-17 05:02:36,860] [p5941] [train.py:99] [INFO] 	training epoch=3 .. weighted_loss= 5.572067327020384 ... loss=0.8084623683204403
+[2021-02-17 05:10:38,319] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.595
+
+[2021-02-17 05:10:39,321] [p5941] [train.py:99] [INFO] 	training epoch=4 .. weighted_loss= 16.45673287595095 ... loss=1.6111137686311712
+[2021-02-17 05:10:39,339] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 05:18:47,525] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.555
+
+[2021-02-17 05:18:48,527] [p5941] [train.py:99] [INFO] 	training epoch=5 .. weighted_loss= 3.7895319929249762 ... loss=0.6371183228544651
+[2021-02-17 05:26:52,417] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.537
+
+[2021-02-17 05:26:53,418] [p5941] [train.py:99] [INFO] 	training epoch=6 .. weighted_loss= 3.462897339588787 ... loss=0.41560677536172663
+[2021-02-17 05:26:53,434] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 05:34:52,149] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.489
+
+[2021-02-17 05:34:53,151] [p5941] [train.py:99] [INFO] 	training epoch=7 .. weighted_loss= 1.8603332215211767 ... loss=0.4606608215625247
+[2021-02-17 05:42:54,872] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.527
+
+[2021-02-17 05:42:55,873] [p5941] [train.py:99] [INFO] 	training epoch=8 .. weighted_loss= 3.6824773521662726 ... loss=0.7098184142225988
+[2021-02-17 05:42:55,888] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 05:50:58,268] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.486
+
+[2021-02-17 05:50:59,269] [p5941] [train.py:99] [INFO] 	training epoch=9 .. weighted_loss= 5.284190997972143 ... loss=0.9417695857750964
+[2021-02-17 05:58:58,493] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.49
+
+[2021-02-17 05:58:59,495] [p5941] [train.py:99] [INFO] 	training epoch=10 .. weighted_loss= 4.157914510783619 ... loss=0.5771332950947935
+[2021-02-17 05:58:59,511] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 06:07:00,216] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.46
+
+[2021-02-17 06:07:01,218] [p5941] [train.py:99] [INFO] 	training epoch=11 .. weighted_loss= 3.7167259647010433 ... loss=0.7628225459218051
+[2021-02-17 06:15:00,660] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.452
+
+[2021-02-17 06:15:01,662] [p5941] [train.py:99] [INFO] 	training epoch=12 .. weighted_loss= 4.797290736981726 ... loss=0.7954940736227069
+[2021-02-17 06:15:01,681] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 06:23:03,819] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.427
+
+[2021-02-17 06:23:04,821] [p5941] [train.py:99] [INFO] 	training epoch=13 .. weighted_loss= 5.082374640900652 ... loss=0.6085090562578921
+[2021-02-17 06:31:09,843] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.424
+
+[2021-02-17 06:31:10,845] [p5941] [train.py:99] [INFO] 	training epoch=14 .. weighted_loss= 3.5092598564733675 ... loss=0.5109427791066378
+[2021-02-17 06:31:10,862] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 06:39:18,027] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.426
+
+[2021-02-17 06:39:19,029] [p5941] [train.py:99] [INFO] 	training epoch=15 .. weighted_loss= 3.6581211476245215 ... loss=0.5218004079340219
+[2021-02-17 06:47:23,863] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.415
+
+[2021-02-17 06:47:24,865] [p5941] [train.py:99] [INFO] 	training epoch=16 .. weighted_loss= 5.076133522540367 ... loss=0.7924701586425759
+[2021-02-17 06:47:24,881] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 06:55:30,368] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.407
+
+[2021-02-17 06:55:31,370] [p5941] [train.py:99] [INFO] 	training epoch=17 .. weighted_loss= 2.541921119624594 ... loss=0.3182720724975053
+[2021-02-17 07:03:35,218] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.411
+
+[2021-02-17 07:03:36,219] [p5941] [train.py:99] [INFO] 	training epoch=18 .. weighted_loss= 4.149714885134459 ... loss=0.6084128977249866
+[2021-02-17 07:03:36,229] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 07:11:42,226] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.414
+
+[2021-02-17 07:11:43,227] [p5941] [train.py:99] [INFO] 	training epoch=19 .. weighted_loss= 8.895380300959246 ... loss=0.9455904738301408
+[2021-02-17 07:19:46,801] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.414
+
+[2021-02-17 07:19:47,803] [p5941] [train.py:99] [INFO] 	training epoch=20 .. weighted_loss= 1.683094212949933 ... loss=0.2715650126148528
+[2021-02-17 07:19:47,820] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 07:27:52,927] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.427
+
+[2021-02-17 07:27:53,929] [p5941] [train.py:99] [INFO] 	training epoch=21 .. weighted_loss= 2.525710039832202 ... loss=0.35866448925964944
+[2021-02-17 07:35:57,828] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.407
+
+[2021-02-17 07:35:58,830] [p5941] [train.py:99] [INFO] 	training epoch=22 .. weighted_loss= 2.256559265668423 ... loss=0.38785953540926743
+[2021-02-17 07:35:58,841] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 07:44:04,645] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.405
+
+[2021-02-17 07:44:05,647] [p5941] [train.py:99] [INFO] 	training epoch=23 .. weighted_loss= 7.417653035766339 ... loss=0.9298110485608181
+[2021-02-17 07:52:09,089] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.398
+
+[2021-02-17 07:52:10,090] [p5941] [train.py:99] [INFO] 	training epoch=24 .. weighted_loss= 2.512741459444815 ... loss=0.3835708620820205
+[2021-02-17 07:52:10,105] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 08:00:15,729] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.379
+
+[2021-02-17 08:00:16,731] [p5941] [train.py:99] [INFO] 	training epoch=25 .. weighted_loss= 3.806070810722228 ... loss=0.40765346843984906
+[2021-02-17 08:08:20,457] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.4
+
+[2021-02-17 08:08:21,458] [p5941] [train.py:99] [INFO] 	training epoch=26 .. weighted_loss= 5.681844640260198 ... loss=0.9444781089093746
+[2021-02-17 08:08:21,474] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 08:16:27,395] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.374
+
+[2021-02-17 08:16:28,396] [p5941] [train.py:99] [INFO] 	training epoch=27 .. weighted_loss= 2.0058311309108694 ... loss=0.3975284451977837
+[2021-02-17 08:24:31,875] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.365
+
+[2021-02-17 08:24:32,877] [p5941] [train.py:99] [INFO] 	training epoch=28 .. weighted_loss= 3.6276176282869783 ... loss=0.49540451433036997
+[2021-02-17 08:24:32,894] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
+
+[2021-02-17 08:32:38,858] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.35
+
+[2021-02-17 08:32:39,860] [p5941] [train.py:99] [INFO] 	training epoch=29 .. weighted_loss= 2.773084956416108 ... loss=0.4108452129244007
+[2021-02-17 08:40:41,521] [p5941] [train.py:185] [INFO] **********************************************************************
+	Evaluation average loss= 0.335
+
+[2021-02-17 08:40:42,522] [p5941] [train.py:99] [INFO] 	training epoch=30 .. weighted_loss= 3.1463955964409114 ... loss=0.40297033185577513
+[2021-02-17 08:40:42,540] [p5941] [train.py:113] [INFO] 
+	*** Saved checkpoint in checkpoint/model_weights/weights.pth.tar ***
 

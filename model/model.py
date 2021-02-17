@@ -41,10 +41,10 @@ class PFLD(nn.Module):
         self.bottleneck_2 = BottleneckResidualBlock(64, 128, expand_factor=2, stride=2).to(device)        
         
         # 6 Bottleneck Resiudal Blocks with the same in/out channel size
-        self.bottleneck_3_first = BottleneckResidualBlock(128,128, expand_factor=4, stride=1).to(device)
         self.bottleneck_3 = []
         for i in range(6):
             self.bottleneck_3.append(BottleneckResidualBlock(128,128, expand_factor=4, stride=1).to(device))
+        self.bottleneck_3[0].use_residual_component = False
 
         # last Bottleneck to reduce channel size
         self.bottleneck_4 = BottleneckResidualBlock(128, 16, expand_factor=2, stride=1).to(device) #16x 14x14
@@ -123,7 +123,7 @@ class AuxiliaryNet(nn.Module):
         self.conv1 = nn.Conv2d(in_channels=64,  out_channels= 128, kernel_size=3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=1)
         self.conv3 = nn.Conv2d(in_channels=128, out_channels=32,  kernel_size=3, stride=2, padding=1)
-        self.conv4 = nn.Conv2d(in_channels=32,  out_channels=128,  kernel_size=7, stride=1)
+        self.conv4 = nn.Conv2d(in_channels=32,  out_channels=128,  kernel_size=7, stride=1, padding=1)
         self.max_pool = nn.MaxPool2d(3)
         self.fc1 = nn.Linear(128, 32)
         self.fc2 = nn.Linear(32, 3)
@@ -140,7 +140,7 @@ class AuxiliaryNet(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
-
+        x = self.max_pool(x)
         # Flatten
         x = x.view(x.shape[0], -1)
 

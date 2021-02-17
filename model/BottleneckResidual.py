@@ -18,8 +18,6 @@ class BottleneckResidualBlock(nn.Module):
         # residual component is not used in case of stride = 1 & in_n = out_n  
         assert stride in [1,2]
         self.use_residual_component = True if stride == 1 and in_channels == out_channels else False
-        # if self.force_residual:
-        #     self.use_residual_component = True
 
         # Expantion 1x1 Conv to increase num of channels
         expand_channels = in_channels * expand_factor
