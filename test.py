@@ -55,6 +55,7 @@ def main():
     # =========== models ============= 
     pfld = PFLD().to(device)
     auxiliarynet = AuxiliaryNet().to(device)
+    print(pfld)
     # ========= load weights ===========
     checkpoint = torch.load(args.pretrained)
     # print(pfld.load_state_dict(checkpoint["pfld"]).keys())
@@ -106,7 +107,7 @@ def main():
             img2 = np.copy(img)
             img2[:,:] = 0
 
-            visualizer.landmarks_radius = 0
+            visualizer.landmarks_radius = 1
             visualizer.landmarks_color = (0,255,0)
             img = visualizer.draw_landmarks(img, pred_landmarks)
             img2 = visualizer.draw_landmarks(img2, pred_landmarks)

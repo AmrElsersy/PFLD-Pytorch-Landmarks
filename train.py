@@ -38,7 +38,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=24, help="training batch size")
     parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--logging', type=str, default='checkpoint/logging', help='path of logging')
-    parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.0005, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-6, help='optimizer weight decay')
     parser.add_argument('--datapath', type=str, default='data', help='root path of augumented WFLW dataset')
     parser.add_argument('--pretrained', type=str,default='checkpoint/model_weights/weights.pth.tar',help='load checkpoint')
@@ -79,7 +79,7 @@ def main():
         auxiliarynet.load_state_dict(checkpoint["auxiliary"])
         start_epoch = checkpoint['epoch'] + 1
         print(f'\tLoaded checkpoint from {args.pretrained}\n')
-        logging.info(f'\tLoaded checkpoint from {args.pretrained}\n')
+        # logging.info(f'\tLoaded checkpoint from {args.pretrained}\n')
         time.sleep(1)
     else:
         print("******************* Start training from scratch *******************\n")

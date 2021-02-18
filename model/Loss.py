@@ -1,3 +1,9 @@
+"""
+Author: Amr Elsersy
+email: amrelsersay@gmail.com
+-----------------------------------------------------------------------------------
+Description: PFLD Loss
+"""
 import torch
 import torch.nn as nn
 import numpy as np 
@@ -19,22 +25,7 @@ class PFLD_L2Loss(nn.Module):
         
 
     def forward(self, landmarks, gt_landmarks, angles, gt_angles, attributes):
-        
 
-        # sum all 3 angles (by axis 1) for each batch example (mean on angles)
-        # note torch.cos accepts only radians
-        # batch_size = landmarks.shape[0]
-        # angles_weight.shape (batch_size, 1)
-        # print(angles, gt_angles)
-        # angles_weight = torch.sum(1-torch.cos(torch.deg2rad(angles-gt_angles)), axis=1)
-
-        # attributes weight .... v1
-        # attributes_w_n = attributes[:, 1:6].float()
-        # mat_ratio = torch.mean(attributes_w_n, axis=0)
-        # mat_ratio = torch.Tensor([1.0 / (x) if x > 0 else batch_size for x in mat_ratio]).to(device)
-        # attributes_weight = torch.sum(attributes_w_n.mul(mat_ratio), axis=1)
-
-        
         diff = (angles-gt_angles)
         # it should be converted to radians .. but since diff is small the weight will be allways samll, so it is better to deal with degrees
         # to_radians = 0.0174532925
@@ -59,20 +50,6 @@ class PFLD_L2Loss(nn.Module):
         # print(f"\nattributes_weight: {attributes_weight}")
         # mean on batch size
         return torch.mean(attributes_weight * angles_weight * landmarks_loss) , torch.mean(landmarks_loss)
-
-    # wing_loss
-    def wing_loss(self, y_true, y_pred, w=10.0, epsilon=2.0):
-        y_pred = y_pred.reshape(-1, 98, 2)
-        y_true = y_true.reshape(-1, 98, 2)
-
-        x = y_true - y_pred
-        c = w * (1.0 - math.log(1.0 + w / epsilon))
-        absolute_x = torch.abs(x)
-        losses = torch.where(w > absolute_x,
-                            w * torch.log(1.0 + absolute_x / epsilon),
-                            absolute_x - c)
-        loss = torch.mean(torch.sum(losses, axis=[1, 2]), axis=0)
-        return loss
 
 if __name__ == "__main__":
     batch_size= 1
