@@ -117,9 +117,10 @@ if __name__ == "__main__":
     # for image, labels in dataloader:
         
         print("image.shape",image.shape)
-        print("landmarks.shape",labels['landmarks'].shape)
-        print("euler_angles.shape",labels['euler_angles'].shape)
-        print("attributes.shape",labels['attributes'].shape)
+        print("landmarks.shape",labels['landmarks'])
+        print("euler_angles.shape",labels['euler_angles'])
+        print("attributes.shape",labels['attributes'])
         print('***' * 40, '\n')        
+        
 
-        time.sleep(1000)
+        time.sleep(1)

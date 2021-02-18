@@ -35,7 +35,7 @@ cudnn.enabled = True
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=800, help='num of training epochs')
-    parser.add_argument('--batch_size', type=int, default=18, help="training batch size")
+    parser.add_argument('--batch_size', type=int, default=24, help="training batch size")
     parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--logging', type=str, default='checkpoint/logging', help='path of logging')
     parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
@@ -44,7 +44,7 @@ def parse_args():
     parser.add_argument('--pretrained', type=str,default='checkpoint/model_weights/weights.pth.tar',help='load checkpoint')
     parser.add_argument('--resume', action='store_true', help='resume from pretrained path specified in prev arg')
     parser.add_argument('--savepath', type=str, default='checkpoint/model_weights/weights.pth.tar', help='save checkpoint')    
-    parser.add_argument('--savefreq', type=int, default=2, help="save weights each freq num of epochs")
+    parser.add_argument('--savefreq', type=int, default=1, help="save weights each freq num of epochs")
     parser.add_argument('--logdir', type=str, default='checkpoint/logging', help='logging')    
     args = parser.parse_args()
     return args
@@ -77,7 +77,7 @@ def main():
         checkpoint = torch.load(args.pretrained)
         pfld.load_state_dict(checkpoint["pfld"], strict=False)
         auxiliarynet.load_state_dict(checkpoint["auxiliary"])
-        start_epoch = checkpoint['epoch']
+        start_epoch = checkpoint['epoch'] + 1
         print(f'\tLoaded checkpoint from {args.pretrained}\n')
         logging.info(f'\tLoaded checkpoint from {args.pretrained}\n')
         time.sleep(1)

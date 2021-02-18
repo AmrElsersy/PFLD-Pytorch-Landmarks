@@ -57,6 +57,8 @@ def main():
     auxiliarynet = AuxiliaryNet().to(device)
     # ========= load weights ===========
     checkpoint = torch.load(args.pretrained)
+    # print(pfld.load_state_dict(checkpoint["pfld"]).keys())
+    # return
     pfld.load_state_dict(checkpoint["pfld"], strict=False)
     auxiliarynet.load_state_dict(checkpoint["auxiliary"])
     print(f'\n\tLoaded checkpoint from {args.pretrained}\n')
@@ -109,7 +111,7 @@ def main():
             img = visualizer.draw_landmarks(img, pred_landmarks)
             img2 = visualizer.draw_landmarks(img2, pred_landmarks)
             visualizer.landmarks_color = (0,0,255)
-            img = visualizer.draw_landmarks(img, landmarks)
+            # img = visualizer.draw_landmarks(img, landmarks)
             visualizer.show(img2, wait=False, winname="black")
             visualizer.show(img)
             print('*'*70,'\n')
