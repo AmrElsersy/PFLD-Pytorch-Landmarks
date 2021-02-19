@@ -129,7 +129,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--haar', action='store_true', help='run the haar cascade face detector')
-    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth1.tar',help='load weights')
+    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth.tar',help='load weights')
     parser.add_argument('--head_pose', action='store_true', help='visualization of head pose euler angles')
     args = parser.parse_args()
 
