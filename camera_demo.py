@@ -35,6 +35,21 @@ def draw_euler_angles(frame, face, axis_pts, euler_angles):
 
     return frame
 
+def scale_rect(x1,y1,w,h, factor=0.2):
+    cx = x1 + w // 2
+    cy = y1 + h // 2
+
+    size = int(max([w, h]) * 1.1)
+    w = size
+    h = size
+    x1 = cx - size // 2
+    y1 = cy - size // 2
+
+    x1 = max(0, x1)
+    y1 = max(0, y1)
+
+    return x1,y1,w,h
+
 def main(args):
     # Models
     pfld = PFLD().to(device)
@@ -52,9 +67,10 @@ def main(args):
         face_detector = HaarCascadeDetector(root)
 
     video = cv2.VideoCapture(0) # 480, 640
-    # video = cv2.VideoCapture("4.mp4") # (720, 1280) or (1080, 1920)
+    # video = cv2.VideoCapture("face_detector/3.mp4") # (720, 1280) or (1080, 1920)
     t1 = 0
     t2 = 0
+    print(video.isOpened())
     while video.isOpened():
         _, frame = video.read()
 
@@ -68,13 +84,14 @@ def main(args):
 
         for face in faces:
             (x,y,w,h) = face
+
             side = max(w,h)
             d_side = int(0.1 * side)
             x -= d_side//2
             y -= d_side//2
             w += d_side
             h += d_side
-
+            # x,y,w,h = scale_rect(x,y,w,h)
             cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 3)
 
             # preprocessing
@@ -112,7 +129,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--haar', action='store_true', help='run the haar cascade face detector')
-    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth.tar',help='load weights')
+    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth1.tar',help='load weights')
     parser.add_argument('--head_pose', action='store_true', help='visualization of head pose euler angles')
     args = parser.parse_args()
 

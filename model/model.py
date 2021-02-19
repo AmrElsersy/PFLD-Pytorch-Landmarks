@@ -34,7 +34,6 @@ class PFLD(nn.Module):
         self.device = torch.device('cpu') if device_cpu else device
 
         self.conv = ConvBlock(in_channels=3, out_channels=64, stride=2, padding=1)
-        # self.conv_non_depth = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
         self.depth_wise_conv = DepthSepConvBlock(in_channels=64, out_channels=64).to(device)
 
         # 1 Bottlenck Non-Resiudal(as stride =2) used for reducing tensor dim size

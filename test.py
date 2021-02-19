@@ -57,7 +57,7 @@ def main():
     auxiliarynet = AuxiliaryNet().to(device)
     print(pfld)
     # ========= load weights ===========
-    checkpoint = torch.load(args.pretrained)
+    checkpoint = torch.load(args.pretrained, map_location=device)
     # print(pfld.load_state_dict(checkpoint["pfld"]).keys())
     # return
     pfld.load_state_dict(checkpoint["pfld"], strict=False)

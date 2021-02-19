@@ -5,8 +5,7 @@ email: amrelsersay@gmail.com
 Description: Dataset Augumentation & Generation
 """
 
-import os, time, enum
-from PIL import Image
+import os, time
 import argparse
 from numpy.lib.type_check import imag
 import math
@@ -16,6 +15,22 @@ from euler_angles import EulerAngles
 
 # ============= Data Augumentation =============
 from utils import flip, resize
+
+def rotate_landmarks(angle, center, landmark):
+    rad = angle * np.pi / 180.0
+    alpha = np.cos(rad)
+    beta = np.sin(rad)
+    M = np.zeros((2,3), dtype=np.float32)
+    M[0, 0] = alpha
+    M[0, 1] = beta
+    M[0, 2] = (1-alpha)*center[0] - beta*center[1]
+    M[1, 0] = -beta
+    M[1, 1] = alpha
+    M[1, 2] = beta*center[0] + (1-alpha)*center[1]
+
+    landmark_ = np.asarray([(M[0,0]*x+M[0,1]*y+M[0,2],
+                             M[1,0]*x+M[1,1]*y+M[1,2]) for (x,y) in landmark])
+    return M, landmark_
 
 class Data_Augumentor:
     """
@@ -44,7 +59,145 @@ class Data_Augumentor:
         self.test_lines  = test_file.read().splitlines()
         self.train_lines = train_file.read().splitlines()
 
+
     def generate_dataset(self, mode='train'):
+        assert mode in ['train', 'test']
+        try:
+            if mode == 'train':
+                os.mkdir(self.train_path)
+                os.mkdir(os.path.join(self.train_path, 'images'))
+            else:
+                os.mkdir(self.test_path)
+                os.mkdir(os.path.join(self.test_path, 'images'))           
+            print(f'created data/{mode} folder')
+        except:
+            print(f"data/{mode} folder already exist .. delete it to generate a new dataset")
+            return
+
+        lines = self.train_lines if mode == 'train' else self.test_lines
+        save_path = self.train_path if mode == 'train' else self.test_path
+
+        # annotation for all train/test dataset strings
+        all_annotations_str = []
+
+        k = 0
+        for annotations_line in lines:
+            # read annotations
+            annotations = self.read_annotations(annotations_line)
+            image_full_path = annotations['path']
+            image = self.read_image(image_full_path)
+            landmarks = annotations['landmarks']
+            attributes = annotations['attributes']
+
+            # ============= Data Augumentation =================
+            all_images = []
+            all_landmarks = []
+
+            if mode == 'test':
+                image, landmarks, skip = self.crop_face_landmarks(image, landmarks, False)
+                if skip:
+                    continue
+                all_images = [image]
+                all_landmarks = [landmarks]
+            else:
+                top_left = np.min(landmarks, axis=0).astype(np.int32) 
+                bottom_right = np.max(landmarks, axis=0).astype(np.int32)
+                wh = bottom_right - top_left + 1
+
+                center = (top_left + wh/2).astype(np.int32)
+                boxsize = int(np.max(wh)*1.2)
+                for i in range(self.n_augumentation):
+                    angle = np.random.randint(-30, 30)
+                    cx, cy = center
+                    cx = cx + int(np.random.randint(-boxsize*0.1, boxsize*0.1))
+                    cy = cy + int(np.random.randint(-boxsize * 0.1, boxsize * 0.1))
+
+                    augument_image, landmarks = self.rotate(image, (cx,cy), landmarks, angle)
+                    # M, landmarks = rotate_landmarks(angle, (cx,cy), landmarks)
+                    # augument_image = cv2.warpAffine(image, M, (int(image.shape[1]*1.1), int(image.shape[0]*1.1)))
+
+                    wh = np.ptp(landmarks, axis=0).astype(np.int32) + 1
+                    size = np.random.randint(int(np.min(wh)), np.ceil(np.max(wh) * 1.25))
+                    xy = np.asarray((cx - size // 2, cy - size//2), dtype=np.int32)
+                    landmarks = (landmarks - xy) / size
+                    if (landmarks < 0).any() or (landmarks > 1).any():
+                        print(landmarks)
+                        continue
+
+                    x1, y1 = xy
+                    x2, y2 = xy + size
+                    height, width, _ = augument_image.shape
+                    dx = max(0, -x1)
+                    dy = max(0, -y1)
+                    x1 = max(0, x1)
+                    y1 = max(0, y1)
+                    edx = max(0, x2 - width)
+                    edy = max(0, y2 - height)
+                    x2 = min(width, x2)
+                    y2 = min(height, y2)
+
+                    augument_image = augument_image[y1:y2, x1:x2]
+                    if (dx > 0 or dy > 0 or edx >0 or edy > 0):
+                        augument_image = cv2.copyMakeBorder(augument_image, dy, edy, dx, edx, cv2.BORDER_CONSTANT, 0)
+
+                    augument_image = cv2.resize(augument_image, (112, 112))
+                    landmarks *= 112
+
+                    # if np.random.choice((True, False)):
+                    #     augument_image, augument_landmarks = flip(augument_image, augument_landmarks)
+
+                    # visualize
+                    img = np.copy(augument_image)
+                    for point in landmarks:
+                        point = (int(point[0]), int(point[1]))
+                        cv2.circle(img, point, 1, (0,255,0), -1)
+                    img = cv2.resize(img, (300,300))
+                    cv2.imshow("image", img)
+                    if cv2.waitKey(0) == 27:
+                        exit(0)
+
+                    all_images.append(augument_image)
+                    all_landmarks.append(landmarks)
+
+            # for every augumented image
+            for i, img in enumerate(all_images):
+                img = all_images[i]
+                landmark = all_landmarks[i]
+
+                # generate euler angles from landmarks
+                _, _, euler_angles = self.euler_estimator.eular_angles_from_landmarks(landmark)
+                euler_str = ' '.join([str(round(angle,2)) for angle in euler_angles])
+
+                # get image name
+                new_image_path = self.save_image(img, image_full_path, k, i, save_path) # id should be unique for every img
+
+                # convert landmarks to string
+                landmarks_list = landmark.reshape(196,).tolist()
+                landmarks_str = ' '.join([str(l) for l in landmarks_list])
+
+                # attributes list to string
+                attributes_str = ' '.join([str(attribute) for attribute in attributes])
+
+                # annotation string = image_name + 98 landmarks + attributes + euler
+                new_annotation = ' '.join([new_image_path, landmarks_str, attributes_str, euler_str])
+                all_annotations_str.append(new_annotation)
+                # print(new_annotation)
+            k += 1
+            if k % 100 == 0:
+                print(f'{mode} dataset: {k} generated data')
+        self.save_annotations(all_annotations_str, save_path, mode)
+
+    def save_annotations(self, all_annotations_str, save_path, mode):
+        # ========= Save annotations ===============
+        one_annotation_str = '\n'.join([annotation for annotation in all_annotations_str])
+        annotations_path = os.path.join(save_path, 'annotations.txt')
+        annotations_file = open(annotations_path, 'w')
+        annotations_file.write(one_annotation_str)
+        annotations_file.close()
+        print('*'*60,f'\n\t {mode} annotations is saved @ data/{mode}/annotations.txt')
+        time.sleep(2)
+
+    def generate_dataset2(self, mode='train'):
         assert mode in ['train', 'test']
         try:
             if mode == 'train':
@@ -158,7 +311,31 @@ class Data_Augumentor:
         print('*'*60,f'\n\t {mode} annotations is saved @ data/{mode}/annotations.txt')
         time.sleep(2)
 
-    def rotate(self, image, landmarks, theta):
+    def rotate(self, image, center, landmarks, theta):
+        # get translation-rotation matrix numpy array shape (2,3) has rotation and last column is translation
+        # note that it translate the coord to the origin apply the rotation then translate it again to cente
+        rotation_matrix = cv2.getRotationMatrix2D(center, theta, 1)
+        # to keep all the boxes is visible as some boundary boxes may dissapear during rotation
+        shape_factor = 1.1
+        h, w = image.shape[:2]
+        new_shape = (int(w*shape_factor), int(h*shape_factor))
+        image = cv2.warpAffine(image, rotation_matrix, new_shape)
+
+        # add homoginous 1 to 2D landmarks to be able to use the same translation-rotation matrix
+        landmarks =np.hstack((landmarks, np.ones((98, 1))))
+        landmarks = (rotation_matrix @ landmarks.T).T
+
+        # for point in landmarks:
+        #     point = (int(point[0]), int(point[1]))
+        #     cv2.circle(image, point, 0, (0,0,255), -1)
+        # ima = cv2.resize(image, (500,500))
+        # cv2.imshow("image", ima)
+        # if cv2.waitKey(0) == 27:
+        #     exit(0)
+
+        return image, landmarks
+
+    def rotate2(self, image, landmarks, theta):
         top_left = np.min(landmarks, axis=0).astype(np.int32) 
         bottom_right = np.max(landmarks, axis=0).astype(np.int32)
         wh = bottom_right - top_left + 1
@@ -302,7 +479,7 @@ class Data_Augumentor:
 
     def save_image(self, img, full_name, k, id, save_path):
         full_name = full_name.split('/')
-        image_name = full_name[-1][:-4] + '_' + str(k) + '_' + str(id) + '.jpg'
+        image_name = full_name[-1][:-4] + '_' + str(k) + '_' + str(id) + '.png'
         image_path = os.path.join(save_path, 'images', image_name)
         cv2.imwrite(image_path, img)
         return image_path
