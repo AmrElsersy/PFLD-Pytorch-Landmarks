@@ -15,7 +15,7 @@ import cv2
 from euler_angles import EulerAngles
 
 # ============= Data Augumentation =============
-from utils import rotate, flip, resize, rotatedRectWithMaxArea
+from utils import flip, resize
 
 class Data_Augumentor:
     """
@@ -23,7 +23,8 @@ class Data_Augumentor:
         - reads dataset annotations and preprocess data & augument it
         - generates new & clean dataset ready to be used.
     """
-    def __init__(self):
+    def __init__(self, n_augumentation=5):
+        self.n_augumentation = n_augumentation
         self.face_shape = (112,112)
         self.theta1 = 15
         self.theta2 = 30
@@ -42,23 +43,6 @@ class Data_Augumentor:
         # the important ones
         self.test_lines  = test_file.read().splitlines()
         self.train_lines = train_file.read().splitlines()
-
-    def scale_rect(self, rect, factor, big_img_shape):
-        (x1, y1), (x2, y2) = rect            
-        rect_dw = (x2 - x1) * factor
-        rect_dy = (y2 - y1) * factor
-        x1 -= rect_dw/2
-        x2 += rect_dw/2
-        y1 -= rect_dy/2
-        y2 += rect_dy/2
-        x1 = max(x1, 0)
-        y1 = max(y1, 0)
-        h_max, w_max = big_img_shape[:2]
-        y2 = min(y2, h_max)
-        x2 = min(x2, w_max)
-        rect[0] = (x1,y1)
-        rect[1] = (x2,y2)
-        return rect
 
     def generate_dataset(self, mode='train'):
         assert mode in ['train', 'test']
@@ -85,11 +69,11 @@ class Data_Augumentor:
             # read annotations
             annotations = self.read_annotations(annotations_line)
             image_full_path = annotations['path']
-            original_image = self.read_image(image_full_path)
+            image = self.read_image(image_full_path)
             rect = annotations['rect']
             landmarks = annotations['landmarks']
             attributes = annotations['attributes']
-                        
+
             # ============= Data Augumentation =================
             """
                 8x dataset
@@ -100,18 +84,14 @@ class Data_Augumentor:
             all_images = []
             all_landmarks = []
 
-            rect = self.scale_rect(np.copy(rect), 0.8, original_image.shape)
             if mode == 'test':
-                image, rect, landmarks = self.crop_face_rect(np.copy(original_image), np.copy(rect), np.copy(landmarks))
                 image, landmarks, skip = self.crop_face_landmarks(image, landmarks)
                 if skip:
                     continue
                 all_images = [image]
                 all_landmarks = [landmarks]
             else:
-                image, rect, landmarks = self.crop_face_rect(np.copy(original_image), np.copy(rect), np.copy(landmarks))
-                n_augumentation = 6
-                for i in range(n_augumentation):
+                for i in range(self.n_augumentation):
                     angle = 0
                     if i >= 0 and i < 2:
                         angle = np.random.randint(-30, -10)
@@ -120,28 +100,25 @@ class Data_Augumentor:
                     elif i >= 4 and i < 6:
                         angle = np.random.randint(10, 30)
 
-                    augument_image, augument_landmarks = rotate(np.copy(image), np.copy(landmarks), angle)
-                    
-                    if np.random.choice((True, False)):
-                        augument_image, augument_landmarks = flip(augument_image, augument_landmarks)
-
+                    augument_image, augument_landmarks = self.rotate(np.copy(image), np.copy(landmarks), angle)
                     augument_image, augument_landmarks, skip = self.crop_face_landmarks(augument_image, augument_landmarks)
                     if skip:
                         continue
-
+                    
+                    if np.random.choice((True, False)):
+                        augument_image, augument_landmarks = flip(augument_image, augument_landmarks)
 
                     # # visualize
                     # img = np.copy(augument_image)
                     # for point in augument_landmarks:
                     #     point = (int(point[0]), int(point[1]))
                     #     cv2.circle(img, point, 1, (0,255,0), -1)
-                    # img = cv2.resize(img, (300,300))
+                    # # img = cv2.resize(img, (300,300))
                     # cv2.imshow("image", img)
                     # if cv2.waitKey(0) == 27:
                     #     exit(0)
                     # print(image_full_path)
                     # print("*"*80)
-
 
                     all_images.append(augument_image)
                     all_landmarks.append(augument_landmarks)
@@ -194,35 +171,68 @@ class Data_Augumentor:
         print('*'*60,f'\n\t {mode} annotations is saved @ data/{mode}/annotations.txt')
         time.sleep(2)
 
+    def rotate(self, image, landmarks, theta):
+        
+        # rotation center = image center
+        h, w = image.shape[:2]
+        cx, cy = (w//2, h//2)
+        # random shift
+        # random_shift = 5
+        # cx += int(np.random.randint(-random_shift, random_shift))
+        # cy += int(np.random.randint(-random_shift, random_shift))
+
+        center = (cx, cy)
+
+        # get translation-rotation matrix numpy array shape (2,3) has rotation and last column is translation
+        # note that it translate the coord to the origin apply the rotation then translate it again to cente
+        rotation_matrix = cv2.getRotationMatrix2D(center, theta, 1)
+        # to keep all the boxes is visible as some boundary boxes may dissapear during rotation
+        shape_factor = 1.1
+        new_shape = (int(w*shape_factor), int(h*shape_factor))
+        image = cv2.warpAffine(image, rotation_matrix, new_shape)
+
+        # add homoginous 1 to 2D landmarks to be able to use the same translation-rotation matrix
+        landmarks =np.hstack((landmarks, np.ones((98, 1))))
+        landmarks = (rotation_matrix @ landmarks.T).T
+
+        # for point in landmarks:
+        #     point = (int(point[0]), int(point[1]))
+        #     cv2.circle(image, point, 0, (0,0,255), -1)
+        # ima = cv2.resize(image, (500,500))
+        # cv2.imshow("image", ima)
+        # if cv2.waitKey(0) == 27:
+        #     exit(0)
+
+        return image, landmarks
+
     def crop_face_landmarks(self, image, landmarks):
+        # max (x,y) together & the min is the boundary of bbox
         top_left = np.min(landmarks, axis=0).astype(np.int32) 
         bottom_right = np.max(landmarks, axis=0).astype(np.int32)
 
         x1,y1 = top_left
         x2,y2 = bottom_right
+        # scale rect by +0.1 of its size
+        rect = [(x1, y1), (x2, y2)]
+        (x1, y1), (x2, y2) = self.scale_rect(rect, 0.1, image.shape)
 
-        # # in case of wh * 1.2
-        # wh = bottom_right - top_left + 1
-        # center = (top_left + wh/2).astype(np.int32)
-        # # boxsize = int(np.max(wh*1.2))
-        # boxsize = int(np.max(wh))
-        # top_left = center - boxsize//2
-        # x1, y1 = top_left
-        # x2, y2 = top_left + boxsize
-
-        x1 = max(0, x1)
-        y1 = max(0, y1)
-        h, w = image.shape[:2]
-        x2 = min(w, x2)
-        y2 = min(h, y2)
+        if x1 == x2 or y1 == y2:
+            print('rr')
+            return None, None, True
 
         # landmarks normalization
         landmarks -= (x1,y1)
-        landmarks = (landmarks / [x2-x1, y2-y1]) * 112 
+        landmarks = landmarks / [x2-x1, y2-y1] 
 
-        # crop & resize
+        # when rotation is applied, boundary parts of image may disapear & landmarks will be out of the image shape
+        if (landmarks < 0).any() or (landmarks > 1).any() :
+            return None, None, True
+
+        # crop
         image = image[int(y1):int(y2), int(x1):int(x2)]
+        # resize
         image = cv2.resize(image, self.face_shape)
+        landmarks *= 112
 
         # skip this image if any of top left coord has a big -ve
         # because this will lead to a big shift to landmarks & wrong annotations
@@ -233,6 +243,23 @@ class Data_Augumentor:
             skip = True
 
         return image, landmarks, skip
+
+    def scale_rect(self, rect, factor, big_img_shape):
+        (x1, y1), (x2, y2) = rect            
+        rect_dw = (x2 - x1) * factor
+        rect_dy = (y2 - y1) * factor
+        x1 -= rect_dw/2
+        x2 += rect_dw/2
+        y1 -= rect_dy/2
+        y2 += rect_dy/2
+        x1 = max(x1, 0)
+        y1 = max(y1, 0)
+        h_max, w_max = big_img_shape[:2]
+        y2 = min(y2, h_max)
+        x2 = min(x2, w_max)
+        rect[0] = (x1,y1)
+        rect[1] = (x2,y2)
+        return np.array(rect).astype(np.int32)
 
     def crop_face_rect(self, image, rect, landmarks):
         (x1, y1), (x2, y2) = rect           
@@ -295,9 +322,10 @@ class Data_Augumentor:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train')
+    parser.add_argument('--n', type=int, default=5, help='number of augumented images per image')
     args = parser.parse_args()
 
-    augumentor = Data_Augumentor()
+    augumentor = Data_Augumentor(args.n)
     augumentor.generate_dataset(args.mode)
     
 if __name__ == "__main__":

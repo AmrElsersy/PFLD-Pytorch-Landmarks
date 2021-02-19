@@ -39,57 +39,6 @@ def rotatedRectWithMaxArea(side, angle):
 
     return int(new_side)
 
-def rotate(image, landmarks, theta):
-
-    # rotation center = image center
-    w,h = image.shape[:2]
-    cx, cy = (w//2, h//2)
-
-    # random shift
-    # random_shift = 5
-    # cx += int(np.random.randint(-random_shift, random_shift))
-    # cy += int(np.random.randint(-random_shift, random_shift))
-
-    center = (cx, cy)
-
-    # get translation-rotation matrix numpy array shape (2,3) has rotation and last column is translation
-    # note that it translate the coord to the origin apply the rotation then translate it again to cente
-    rotation_matrix = cv2.getRotationMatrix2D(center, theta, 1)
-    # print("rotation_matrix",rotation_matrix, type(rotation_matrix), rotation_matrix.shape)
-    new_shape = (image.shape[0], image.shape[1])
-    image = cv2.warpAffine(image, rotation_matrix, new_shape)
-
-    # add homoginous 1 to 2D landmarks to be able to use the same translation-rotation matrix
-    landmarks =np.hstack((landmarks, np.ones((98, 1))))
-    landmarks = (rotation_matrix @ landmarks.T).T
-
-    # # print(landmarks.shape)
-    side = w # can be h also as w = h
-    new_side = rotatedRectWithMaxArea(side, theta)
-    # print(f"new w,h =({new_side}, {new_side})")
-    # print(f"center ={center}")
-    top_left = (center[0] - new_side//2, center[1] - new_side//2)
-    bottom_right = (center[0] + new_side//2, center[1] + new_side//2)
-    # print('top_left',top_left)
-    # print('botton_right:', bottom_right)
-
-    # crop the largest rect & translate the landmarks to that rect coord.
-    image = image[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
-    landmarks -= top_left 
-    # resize both image & landmarks
-    image, landmarks = resize(image, landmarks)
-    # # clip -ve coord
-    # landmarks = np.clip(landmarks, 0.0, 112.0)
-
-    # for point in landmarks:
-    #     point = (int(point[0]), int(point[1]))
-    #     cv2.circle(image, point, 0, (0,0,255), -1)
-    # # image = cv2.resize(image, (300,300))
-    # cv2.imshow("image"+str(theta), image)
-    # cv2.waitKey(0)
-
-    return image, landmarks
-
 def flip(image, landmarks):
     # horizontal flip
     image = cv2.flip(image, 1)
