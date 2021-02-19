@@ -75,30 +75,18 @@ class Data_Augumentor:
             attributes = annotations['attributes']
 
             # ============= Data Augumentation =================
-            """
-                8x dataset
-                    image + flip image
-                    4 rotated image
-                    2 rotated flip image
-            """
             all_images = []
             all_landmarks = []
 
             if mode == 'test':
-                image, landmarks, skip = self.crop_face_landmarks(image, landmarks)
+                image, landmarks, skip = self.crop_face_landmarks(image, landmarks, False)
                 if skip:
                     continue
                 all_images = [image]
                 all_landmarks = [landmarks]
             else:
                 for i in range(self.n_augumentation):
-                    angle = 0
-                    if i >= 0 and i < 2:
-                        angle = np.random.randint(-30, -10)
-                    elif i >= 2 and i < 4:
-                        angle = np.random.randint(-10, 10)
-                    elif i >= 4 and i < 6:
-                        angle = np.random.randint(10, 30)
+                    angle = np.random.randint(-30, 30)
 
                     augument_image, augument_landmarks = self.rotate(np.copy(image), np.copy(landmarks), angle)
                     augument_image, augument_landmarks, skip = self.crop_face_landmarks(augument_image, augument_landmarks)
@@ -117,7 +105,6 @@ class Data_Augumentor:
                     # cv2.imshow("image", img)
                     # if cv2.waitKey(0) == 27:
                     #     exit(0)
-                    # print(image_full_path)
                     # print("*"*80)
 
                     all_images.append(augument_image)
@@ -172,14 +159,16 @@ class Data_Augumentor:
         time.sleep(2)
 
     def rotate(self, image, landmarks, theta):
-        
-        # rotation center = image center
-        h, w = image.shape[:2]
-        cx, cy = (w//2, h//2)
+        top_left = np.min(landmarks, axis=0).astype(np.int32) 
+        bottom_right = np.max(landmarks, axis=0).astype(np.int32)
+        wh = bottom_right - top_left + 1
+        center = (top_left + wh/2).astype(np.int32)
+        boxsize = int(np.max(wh)*1.2)
+        cx, cy = center
+
         # random shift
-        # random_shift = 5
-        # cx += int(np.random.randint(-random_shift, random_shift))
-        # cy += int(np.random.randint(-random_shift, random_shift))
+        cx += int(np.random.randint(-boxsize*0.1, boxsize*0.1))
+        cy += int(np.random.randint(-boxsize*0.1, boxsize*0.1))
 
         center = (cx, cy)
 
@@ -188,6 +177,7 @@ class Data_Augumentor:
         rotation_matrix = cv2.getRotationMatrix2D(center, theta, 1)
         # to keep all the boxes is visible as some boundary boxes may dissapear during rotation
         shape_factor = 1.1
+        h, w = image.shape[:2]
         new_shape = (int(w*shape_factor), int(h*shape_factor))
         image = cv2.warpAffine(image, rotation_matrix, new_shape)
 
@@ -205,19 +195,25 @@ class Data_Augumentor:
 
         return image, landmarks
 
-    def crop_face_landmarks(self, image, landmarks):
+    def crop_face_landmarks(self, image, landmarks, is_scaled=True):
         # max (x,y) together & the min is the boundary of bbox
         top_left = np.min(landmarks, axis=0).astype(np.int32) 
         bottom_right = np.max(landmarks, axis=0).astype(np.int32)
-
+        
         x1,y1 = top_left
         x2,y2 = bottom_right
-        # scale rect by +0.1 of its size
         rect = [(x1, y1), (x2, y2)]
-        (x1, y1), (x2, y2) = self.scale_rect(rect, 0.1, image.shape)
+ 
+        if is_scaled:
+            wh = np.ptp(landmarks, axis=0).astype(np.int32) + 1
+            scaled_size = np.random.randint(int(np.min(wh)), np.ceil(np.max(wh) * 1.25))            
+
+            (x1, y1), (x2, y2) = self.scale_rect(rect, scaled_size, image.shape)
+        else:
+            (x1, y1), (x2, y2) = self.scale_rect2(rect, 0.2, image.shape)
+
 
         if x1 == x2 or y1 == y2:
-            print('rr')
             return None, None, True
 
         # landmarks normalization
@@ -238,13 +234,32 @@ class Data_Augumentor:
         # because this will lead to a big shift to landmarks & wrong annotations
         skip = False
         min_neg = min(x1,y1)
-        # print(x1,y1, '...', x2,y2)
         if min_neg < -5:
             skip = True
 
         return image, landmarks, skip
 
     def scale_rect(self, rect, factor, big_img_shape):
+        (x1, y1), (x2, y2) = rect        
+        cx = (x1+x2) // 2
+        cy = (y1+y2) // 2    
+
+        top_left = np.asarray((cx - factor // 2, cy - factor//2), dtype=np.int32)
+        bottom_right = top_left + (factor, factor)
+
+        (x1,y1) = top_left
+        (x2,y2) = bottom_right
+
+        x1 = max(x1, 0)
+        y1 = max(y1, 0)
+        h_max, w_max = big_img_shape[:2]
+        y2 = min(y2, h_max)
+        x2 = min(x2, w_max)
+        rect[0] = (x1,y1)
+        rect[1] = (x2,y2)
+        return np.array(rect).astype(np.int32)
+ 
+    def scale_rect2(self, rect, factor, big_img_shape):
         (x1, y1), (x2, y2) = rect            
         rect_dw = (x2 - x1) * factor
         rect_dy = (y2 - y1) * factor
