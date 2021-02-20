@@ -1,3 +1,9 @@
+"""
+Author: Amr Elsersy
+email: amrelsersay@gmail.com
+-----------------------------------------------------------------------------------
+Description: Live Camera Demo using opencv dnn face detection & PFLD for landmarks
+"""
 import sys
 import time
 import argparse
@@ -51,7 +57,7 @@ def scale_rect(x1,y1,w,h, factor=0.2):
     return x1,y1,w,h
 
 def main(args):
-    # Models
+    # Model
     pfld = PFLD().to(device)
     pfld.eval()
     head_pose = EulerAngles()
@@ -62,15 +68,17 @@ def main(args):
 
     # Face detection
     root = 'face_detector'
-    face_detector = DnnDetector(root)
+    face_detector = None
     if args.haar:
         face_detector = HaarCascadeDetector(root)
+    else:
+        face_detector = DnnDetector(root)
 
     video = cv2.VideoCapture(0) # 480, 640
     # video = cv2.VideoCapture("face_detector/3.mp4") # (720, 1280) or (1080, 1920)
     t1 = 0
     t2 = 0
-    print(video.isOpened())
+    print('video.isOpened:', video.isOpened())
     while video.isOpened():
         _, frame = video.read()
 
@@ -91,7 +99,9 @@ def main(args):
             y -= d_side//2
             w += d_side
             h += d_side
+
             # x,y,w,h = scale_rect(x,y,w,h)
+            
             cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 3)
 
             # preprocessing
@@ -105,6 +115,7 @@ def main(args):
                 # landmarks
                 _, landmarks = pfld(input_face)
                 # print(f'PFLD Forward time = {(time.time()-t)*1000}')
+
                 # visualization
                 landmarks = landmarks.cpu().reshape(98,2).numpy()
                 landmarks = (landmarks * (w,h) ).astype(np.int32) 

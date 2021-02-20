@@ -32,7 +32,7 @@ class WFLW_Dataset(Dataset):
 
         labels = self.read_annotations(index)
         image = self.read_image(labels['image_name'])
-        # labels['landmarks'] *= 112
+        labels['landmarks'] *= 112
         
         if self.transform:
             # to tensor

@@ -38,12 +38,12 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=24, help="training batch size")
     parser.add_argument('--tensorboard', type=str, default='checkpoint/tensorboard', help='path log dir of tensorboard')
     parser.add_argument('--logging', type=str, default='checkpoint/logging', help='path of logging')
-    parser.add_argument('--lr', type=float, default=0.0005, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-6, help='optimizer weight decay')
     parser.add_argument('--datapath', type=str, default='data', help='root path of augumented WFLW dataset')
     parser.add_argument('--pretrained', type=str,default='checkpoint/model_weights/weights.pth.tar',help='load checkpoint')
     parser.add_argument('--resume', action='store_true', help='resume from pretrained path specified in prev arg')
-    parser.add_argument('--savepath', type=str, default='checkpoint/model_weights/weights.pth.tar', help='save checkpoint')    
+    parser.add_argument('--savepath', type=str, default='checkpoint/model_weights', help='save checkpoint path')    
     parser.add_argument('--savefreq', type=int, default=1, help="save weights each freq num of epochs")
     parser.add_argument('--logdir', type=str, default='checkpoint/logging', help='logging')    
     args = parser.parse_args()
@@ -98,7 +98,7 @@ def main():
         val_loss = validate(pfld, auxiliarynet, loss, test_dataloader, epoch)
         logging.info(f"\ttraining epoch={epoch} .. weighted_loss= {w_train_loss} ... loss={train_loss}")
         # ============= tensorboard =============
-        writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
+        # writer.add_scalar('train_weighted_loss',w_train_loss, epoch)
         writer.add_scalar('train_loss',train_loss, epoch)
         writer.add_scalar('val_loss',val_loss, epoch)
         # ============== save model =============
@@ -108,9 +108,9 @@ def main():
                 "auxiliary": auxiliarynet.state_dict(),
                 "epoch": epoch
             }
-            torch.save(checkpoint_state, args.savepath)
-            print(f'\n\t*** Saved checkpoint in {args.savepath} ***\n')
-            logging.info(f'\n\t*** Saved checkpoint in {args.savepath} ***\n')
+            savepath = os.path.join(args.savepath, f'weights.pth_epoch_{epoch}.tar')
+            torch.save(checkpoint_state, savepath)
+            print(f'\n\t*** Saved checkpoint in {savepath} ***\n')
             time.sleep(2)
     writer.close()
 
