@@ -29,7 +29,7 @@ def draw_euler_angles(frame, face, axis_pts, euler_angles):
     yaw_point   = tuple(axis_pts[1].ravel() + top_left)
     roll_point  = tuple(axis_pts[2].ravel() + top_left)
 
-    width = 3
+    width = 2
     cv2.line(frame, center,  pitch_point, (0,255,0), width)
     cv2.line(frame, center,  yaw_point, (255,0,0), width)
     cv2.line(frame, center,  roll_point, (0,0,255), width)
@@ -41,20 +41,22 @@ def draw_euler_angles(frame, face, axis_pts, euler_angles):
 
     return frame
 
-def scale_rect(x1,y1,w,h, factor=0.2):
-    cx = x1 + w // 2
-    cy = y1 + h // 2
-
-    size = int(max([w, h]) * 1.1)
-    w = size
-    h = size
-    x1 = cx - size // 2
-    y1 = cy - size // 2
-
-    x1 = max(0, x1)
-    y1 = max(0, y1)
-
-    return x1,y1,w,h
+def scale_rect(rect, factor, big_img_shape):
+    (x1, y1, w, h) = rect
+    x2 = x1 + w
+    y2 = y1 + h            
+    rect_dw = (x2 - x1) * factor
+    rect_dy = (y2 - y1) * factor
+    x1 -= rect_dw/2
+    x2 += rect_dw/2
+    y1 -= rect_dy/2
+    y2 += rect_dy/2
+    x1 = max(x1, 0)
+    y1 = max(y1, 0)
+    h_max, w_max = big_img_shape[:2]
+    y2 = min(y2, h_max)
+    x2 = min(x2, w_max)
+    return int(x1), int(y1), int(x2-x1), int(y2-y1)
 
 def main(args):
     # Model
@@ -93,15 +95,7 @@ def main(args):
         for face in faces:
             (x,y,w,h) = face
 
-            side = max(w,h)
-            d_side = int(0.1 * side)
-            x -= d_side//2
-            y -= d_side//2
-            w += d_side
-            h += d_side
-
-            # x,y,w,h = scale_rect(x,y,w,h)
-            
+            x,y,w,h = scale_rect((x,y,w,h), 0.15, frame.shape)
             cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 3)
 
             # preprocessing
@@ -121,7 +115,7 @@ def main(args):
                 landmarks = (landmarks * (w,h) ).astype(np.int32) 
     
                 for (x_l, y_l) in landmarks:
-                    cv2.circle(frame, (x + x_l, y + y_l), 2, (0,255,0), -1)
+                    cv2.circle(frame, (x + x_l, y + y_l), 1, (0,255,0), -1)
 
                 if args.head_pose:
                     rvec, tvec, euler_angles = head_pose.eular_angles_from_landmarks(np.copy(landmarks).astype(np.float))
@@ -140,7 +134,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--haar', action='store_true', help='run the haar cascade face detector')
-    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth.tar',help='load weights')
+    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth1.tar',help='load weights')
     parser.add_argument('--head_pose', action='store_true', help='visualization of head pose euler angles')
     args = parser.parse_args()
 
