@@ -35,18 +35,24 @@ def draw_euler_angles(frame, face, axis_pts, euler_angles):
     cv2.line(frame, center,  roll_point, (0,0,255), width)
 
     pitch, yaw, roll = euler_angles
-    cv2.putText(frame, "Pitch:{:.2f}".format(pitch), (x,y+10), cv2.FONT_HERSHEY_PLAIN, 1, (0,255,0))
-    cv2.putText(frame, "Yaw:{:.2f}".format(yaw), (x,y+25), cv2.FONT_HERSHEY_PLAIN, 1, (0,255,0))
-    cv2.putText(frame, "Roll:{:.2f}".format(roll), (x,y+40), cv2.FONT_HERSHEY_PLAIN, 1, (0,255,0))
+    cv2.putText(frame, "Pitch:{:.2f}".format(pitch), (x,y-10), cv2.FONT_HERSHEY_PLAIN, 1, (0,255,0))
+    cv2.putText(frame, "Yaw:{:.2f}".format(yaw), (x,y-25), cv2.FONT_HERSHEY_PLAIN, 1, (0,255,0))
+    cv2.putText(frame, "Roll:{:.2f}".format(roll), (x,y-40), cv2.FONT_HERSHEY_PLAIN, 1, (0,255,0))
 
     return frame
 
-def scale_rect(rect, factor, big_img_shape):
+def preprocess_rect(rect, big_img_shape):
     (x1, y1, w, h) = rect
+    w_factor = 0.1
+    h_factor = 0.1
+    if w > h:
+        h_factor = 0.25
+    elif h > w:
+        w_factor = 0.25
     x2 = x1 + w
     y2 = y1 + h            
-    rect_dw = (x2 - x1) * factor
-    rect_dy = (y2 - y1) * factor
+    rect_dw = (x2 - x1) * w_factor
+    rect_dy = (y2 - y1) * h_factor
     x1 -= rect_dw/2
     x2 += rect_dw/2
     y1 -= rect_dy/2
@@ -56,7 +62,7 @@ def scale_rect(rect, factor, big_img_shape):
     h_max, w_max = big_img_shape[:2]
     y2 = min(y2, h_max)
     x2 = min(x2, w_max)
-    return int(x1), int(y1), int(x2-x1), int(y2-y1)
+    return int(x1), int(y1), int(x2-x1+1), int(y2-y1+1)
 
 def main(args):
     # Model
@@ -95,7 +101,7 @@ def main(args):
         for face in faces:
             (x,y,w,h) = face
 
-            x,y,w,h = scale_rect((x,y,w,h), 0.15, frame.shape)
+            x,y,w,h = preprocess_rect((x,y,w,h), frame.shape)
             cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 3)
 
             # preprocessing
@@ -134,7 +140,9 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--haar', action='store_true', help='run the haar cascade face detector')
-    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth1.tar',help='load weights')
+    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth_epoch_199.tar'
+    # parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth76.tar'
+                        ,help='load weights')
     parser.add_argument('--head_pose', action='store_true', help='visualization of head pose euler angles')
     args = parser.parse_args()
 
