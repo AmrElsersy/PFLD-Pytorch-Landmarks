@@ -112,7 +112,7 @@ class Data_Augumentor:
             # for every augumented image
             for i, img in enumerate(all_images):
                 img = all_images[i]
-                landmark = all_landmarks[i]
+                landmark = all_landmarks[i] / 112
 
                 # generate euler angles from landmarks
                 _, _, euler_angles = self.euler_estimator.eular_angles_from_landmarks(landmark)
