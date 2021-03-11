@@ -29,12 +29,13 @@ class WFLW_Visualizer:
         self.crop_resize_shape = (400, 400)
         self.user_press = None
 
-    def visualize(self, image, labels):
+    def visualize(self, image, labels, draw_eulers = False):
         landmarks = labels['landmarks'].astype(np.int32)
         euler_angles = labels['euler_angles']
         
         image = self.draw_landmarks(image, landmarks)
-        image = self.draw_euler_angles_approximation(image, euler_angles)
+        if draw_eulers:
+            image = self.draw_euler_angles_approximation(image, euler_angles)
         self.show(image)        
 
     def show(self, image, size = None, wait = True, winname="image"):
