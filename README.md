@@ -67,6 +67,9 @@ Take a wide look on dataset examples using tensorboard
 $ python3 visualization.py --tensorboard
 $ tensorboard --logdir checkpoint/tensorboard
 ```
+![Screenshot from 2021-03-11 17-20-37](https://user-images.githubusercontent.com/35613645/110810440-78e25d80-828e-11eb-9689-523c4d12b772.png)
+
+
 
 ##### Testing on WFLW test dataset
 ```
@@ -78,11 +81,6 @@ $ python3 test.py
 Train on augumented WFLW dataset
 ```
 $ python3 train.py
-```
-
-##### Testing on WFLW test dataset
-```
-$ python3 test.py
 ```
 
 
