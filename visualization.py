@@ -130,7 +130,7 @@ class WFLW_Visualizer:
     def visualize_tensorboard(self, images, labels, step=0):
         images = self.batch_draw_landmarks(images, labels)
         # format must be specified (N, H, W, C)
-        self.writer.add_images("images", images, global_step=step, dataformats="NHWC")
+        self.writer.add_images("images", images, global_step=step, dataformats="NHW")
 
 
 
