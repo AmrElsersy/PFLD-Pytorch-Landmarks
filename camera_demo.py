@@ -83,7 +83,7 @@ def main(args):
         face_detector = DnnDetector(root)
 
     video = cv2.VideoCapture(0) # 480, 640
-    # video = cv2.VideoCapture("face_detector/3.mp4") # (720, 1280) or (1080, 1920)
+    # video = cv2.VideoCapture("../1.mp4") # (720, 1280) or (1080, 1920)
     t1 = 0
     t2 = 0
     print('video.isOpened:', video.isOpened())
@@ -118,16 +118,21 @@ def main(args):
 
                 # visualization
                 landmarks = landmarks.cpu().reshape(98,2).numpy()
-                landmarks = (landmarks * (w,h) ).astype(np.int32) 
-    
-                for (x_l, y_l) in landmarks:
+
+                visual_landmarks = (landmarks * (w,h) ).astype(np.int32) 
+                for (x_l, y_l) in visual_landmarks:
                     cv2.circle(frame, (x + x_l, y + y_l), 1, (0,255,0), -1)
 
                 if args.head_pose:
-                    rvec, tvec, euler_angles = head_pose.eular_angles_from_landmarks(np.copy(landmarks).astype(np.float))
+                    _, _, euler_angles = head_pose.eular_angles_from_landmarks(np.copy(landmarks*(112)).astype(np.float))
+
+                    # just for visualization .. to get rotation/translation in terms of face rect (not to the 112x112 rect)
+                    vis_rvec, vis_tvec, euler_angles = head_pose.eular_angles_from_landmarks(np.copy(landmarks*(w,h)).astype(np.float))
+
                     axis = np.identity(3) * 7
-                    axis_pts = cv2.projectPoints(axis, rvec, tvec, head_pose.camera_intrensic_matrix, None)[0]
-                    frame = draw_euler_angles(frame, (x,y,w,h), axis_pts, euler_angles)
+                    axis[2,2] = 4
+                    axis_pts = cv2.projectPoints(axis, vis_rvec, vis_tvec , head_pose.camera_intrensic_matrix, None)[0]
+                    frame = draw_euler_angles(frame, face, axis_pts, euler_angles)
 
         cv2.putText(frame, str(fps), (10,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0))
         cv2.imshow("Video", frame)   
@@ -140,8 +145,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--haar', action='store_true', help='run the haar cascade face detector')
-    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth_epoch_199.tar'
-    # parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth76.tar'
+    parser.add_argument('--pretrained',type=str,default='checkpoint/model_weights/weights.pth76.tar'
                         ,help='load weights')
     parser.add_argument('--head_pose', action='store_true', help='visualization of head pose euler angles')
     args = parser.parse_args()

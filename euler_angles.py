@@ -40,8 +40,8 @@ class EulerAngles:
         c_x = img_shape[0] / 2
         c_y = img_shape[1] / 2
         FieldOfView = 60
-        focal = c_x / np.tan(np.radians(FieldOfView/2)) # from triangler similarity
-
+        focal = c_x / np.tan(np.radians(FieldOfView/2))
+        
         # Approximated Camera intrensic matrix assuming weak prespective
         return np.float32([
             [focal, 0.0,    c_x], 
@@ -110,9 +110,7 @@ class EulerAngles:
                 tvec: translate vector (world origin position relative to the camera 3d coord system)
                 _ : error -not important-.
         """
-        
         _, rvec, tvec = cv2.solvePnP(self.landmarks_3D, landmarks_2D, self.camera_intrensic_matrix, distCoeffs=None)
-
 
         """
             note:
