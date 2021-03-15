@@ -127,7 +127,7 @@ def main(args):
                     _, _, euler_angles = head_pose.eular_angles_from_landmarks(np.copy(landmarks*(112)).astype(np.float))
 
                     # just for visualization .. to get rotation/translation in terms of face rect (not to the 112x112 rect)
-                    vis_rvec, vis_tvec, euler_angles = head_pose.eular_angles_from_landmarks(np.copy(landmarks*(w,h)).astype(np.float))
+                    vis_rvec, vis_tvec, _ = head_pose.eular_angles_from_landmarks(np.copy(landmarks*(w,h)).astype(np.float))
 
                     axis = np.identity(3) * 7
                     axis[2,2] = 4
